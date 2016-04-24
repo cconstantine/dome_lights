@@ -25,8 +25,8 @@ int main( void )
 		return -1;
 	}
 
+	glfwWindowHint(GLFW_SAMPLES, 1);
 /*
-	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
@@ -80,13 +80,23 @@ int main( void )
   GLuint resolution_id = glGetUniformLocation(programID, "resolution");
   GLuint mouse_id = glGetUniformLocation(programID, "mouse");
 
-	do{
+  double lastTime = glfwGetTime(); int nbFrames = 0;
 
+	do{
+    // Measure speed
+    double currentTime = glfwGetTime();
+    nbFrames++;
+    if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
+       // printf and reset timer
+       printf("%f ms/frame\n", 1000.0/double(nbFrames));
+       nbFrames = 0;
+       lastTime = currentTime;
+    }
     int width;
     int height;
     glfwGetWindowSize(window, &width, &height);
     glViewport(0,0,width,height);
-    
+
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
