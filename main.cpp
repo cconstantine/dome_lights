@@ -13,6 +13,7 @@ GLFWwindow* window;
 #include <glm/glm.hpp>
 using namespace glm;
 
+const int canvasSize = 400;
 #include <shader.hpp>
 
 int main( int argc, char** argv )
@@ -84,7 +85,9 @@ int main( int argc, char** argv )
 
 
   /******* Framebuffer ******/
-  GLuint FramebufferName;
+
+  // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+  GLuint FramebufferName = 0;
   glGenFramebuffers(1, &FramebufferName);
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
@@ -92,14 +95,11 @@ int main( int argc, char** argv )
   GLuint renderedTexture;
   glGenTextures(1, &renderedTexture);
   glBindTexture(GL_TEXTURE_2D, renderedTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, canvasSize, canvasSize, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-  // Give an empty image to OpenGL ( the last "0" )
-  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 800, 800, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-  // Poor filtering. Needed !
+  // Poor filtering
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
   // Set "renderedTexture" as our colour attachement #0
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
@@ -141,14 +141,14 @@ int main( int argc, char** argv )
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
     glViewport(0,0,800,800); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
+    // Use our shader
+    glUseProgram(programID);
     glUniform1f(time_id, glfwGetTime());
-    glUniform2f(resolution_id, width, height);
-    glUniform2f(mouse_id, xpos/width, ypos/height);
+    glUniform2f(resolution_id, canvasSize, canvasSize);
+    glUniform2f(mouse_id, xpos/canvasSize, ypos/canvasSize);
 		// Clear the screen
 		glClear( GL_COLOR_BUFFER_BIT );
 
-		// Use our shader
-		glUseProgram(programID);
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -184,7 +184,7 @@ int main( int argc, char** argv )
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
     // Set our "renderedTexture" sampler to user Texture Unit 0
-    glUniform1i(texID, 0);
+    glUniform1i(texID, GL_TEXTURE0);
 
     glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
 
