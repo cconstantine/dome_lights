@@ -139,7 +139,7 @@ int main( int argc, char** argv )
 
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-    glViewport(0,0,800,800); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+    glViewport(0,0,canvasSize,canvasSize); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
     // Use our shader
     glUseProgram(programID);
@@ -171,8 +171,9 @@ int main( int argc, char** argv )
 
     // Render to the screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    int size = width > height ? width : height;
         // Render on the whole framebuffer, complete from the lower left corner to the upper right
-    glViewport(0,0,width,height);
+    glViewport((width - size)/2,(height - size) / 2,size,size);
 
     // Clear the screen
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
