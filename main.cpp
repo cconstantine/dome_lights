@@ -34,7 +34,7 @@ int main( int argc, char** argv )
 	*/
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Dome Lights", NULL, NULL);
+	window = glfwCreateWindow( 800, 800, "Dome Lights", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -82,6 +82,44 @@ int main( int argc, char** argv )
 
   double lastTime = glfwGetTime(); int nbFrames = 0;
 
+
+  /******* Framebuffer ******/
+  GLuint FramebufferName;
+  glGenFramebuffers(1, &FramebufferName);
+  glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+  // The texture we're going to render to
+  GLuint renderedTexture;
+  glGenTextures(1, &renderedTexture);
+  glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+  // Give an empty image to OpenGL ( the last "0" )
+  glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, 800, 800, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+  // Poor filtering. Needed !
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  // Set "renderedTexture" as our colour attachement #0
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+  // Set the list of draw buffers.
+  GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+  glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+  // Always check that our framebuffer is ok
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    fprintf(stderr, "Failed to init GL_FRAMEBUFFER\n");
+    exit(1);
+  }
+  /**************************/
+
+
+  // Create and compile our GLSL program from the shaders
+  GLuint quad_programID = LoadShaders( "../Passthrough.vertexshader", "../WobblyTexture.fragmentshader" );
+  GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
+  GLuint timeID = glGetUniformLocation(quad_programID, "time");
+    
 	do{
     // Measure speed
     double currentTime = glfwGetTime();
@@ -95,10 +133,13 @@ int main( int argc, char** argv )
     int width;
     int height;
     glfwGetWindowSize(window, &width, &height);
-    glViewport(0,0,width,height);
 
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
+
+    // Render to our framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+    glViewport(0,0,800,800); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
     glUniform1f(time_id, glfwGetTime());
     glUniform2f(resolution_id, width, height);
@@ -125,6 +166,45 @@ int main( int argc, char** argv )
 		glDrawArrays(GL_TRIANGLES, 0, 6); // 3 indices starting at 0 -> 1 triangle
 
 		glDisableVertexAttribArray(0);
+
+
+
+    // Render to the screen
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // Render on the whole framebuffer, complete from the lower left corner to the upper right
+    glViewport(0,0,width,height);
+
+    // Clear the screen
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Use our shader
+    glUseProgram(quad_programID);
+
+    // Bind our texture in Texture Unit 0
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+    // Set our "renderedTexture" sampler to user Texture Unit 0
+    glUniform1i(texID, 0);
+
+    glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
+
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+      0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+      2,                  // size
+      GL_FLOAT,           // type
+      GL_FALSE,           // normalized?
+      0,                  // stride
+      (void*)0            // array buffer offset
+    );
+
+    // Draw the triangles !
+    glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+
+    glDisableVertexAttribArray(0);
+
 
 		// Swap buffers
 		glfwSwapBuffers(window);
