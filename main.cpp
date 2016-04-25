@@ -15,7 +15,7 @@ using namespace glm;
 
 #include <shader.hpp>
 
-int main( void )
+int main( int argc, char** argv )
 {
 	// Initialise GLFW
 	if( !glfwInit() )
@@ -57,7 +57,7 @@ int main( void )
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	GLuint programID = LoadShaders( "../SimpleVertexShader.vertexshader", "../SimpleFragmentShader.fragmentshader" );
+	GLuint programID = LoadShaders( argv[1]);//"../SimpleFragmentShader.fragmentshader" );
 
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
