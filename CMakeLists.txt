@@ -1,11 +1,26 @@
 # Set the name and the supported language of the project
 project(candy_pusher)
-find_package(OpenGL REQUIRED)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
+
+#find_package(OpenGL REQUIRED)
+#find_package (SOIL REQUIRED)
+
+# Find all the libs that don't require extra parameters
+foreach(lib OpenGL SOIL)
+	find_package(${lib} REQUIRED)
+	include_directories(${${lib}_INCLUDE_DIRS})
+	list(APPEND LIBS ${${lib}_LIBRARIES})
+	add_definitions(${${lib}_DEFINITIONS})
+
+	MESSAGE( STATUS "LIBS:         " ${CMAKE_BINARY_DIR} )
+endforeach(lib)
 
 # Set the minimum version of cmake required to build this project
 cmake_minimum_required(VERSION 2.8)
 
 add_subdirectory (external)
+set(CMAKE_CXX_FLAGS "-std=c++11" )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
 include(MSVCMultipleProcessCompile) # /MP
@@ -28,8 +43,11 @@ add_definitions(
 	-D_CRT_SECURE_NO_WARNINGS
 )
 
-find_package(PkgConfig REQUIRED)
 
-add_executable(dome_lights main.cpp shader.cpp)
+add_executable(dome_lights main.cpp )
 
-target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} )
+target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
+
+add_executable(model_viewer model_viewer.cpp )
+
+target_link_libraries(model_viewer glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})

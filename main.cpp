@@ -11,10 +11,31 @@ GLFWwindow* window;
 
 // Include GLM
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 using namespace glm;
 
 const int canvasSize = 400;
+
 #include <shader.hpp>
+#include <camera.hpp>
+#include <model.hpp>
+
+// Function prototypes
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void Do_Movement();
+
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+bool keys[1024];
+GLfloat lastX = 400, lastY = 300;
+bool firstMouse = true;
+
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+
 
 int main( int argc, char** argv )
 {
@@ -42,29 +63,43 @@ int main( int argc, char** argv )
 	}
 	glfwMakeContextCurrent(window);
 
-	// Initialize GLEW
-	glewExperimental = true; // Needed for core profile
+  // Set the required callback functions
+  glfwSetKeyCallback(window, key_callback);
+  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetScrollCallback(window, scroll_callback);
 
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		getchar();
-		glfwTerminate();
-		return -1;
-	}
+  // Ensure we can capture the escape key being pressed below
+  //glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+  // Options
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	// Ensure we can capture the escape key being pressed below
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+  // Initialize GLEW
+  glewExperimental = GL_TRUE; // Needed for core profile
+  if (glewInit() != GLEW_OK) {
+    fprintf(stderr, "Failed to initialize GLEW\n");
+    getchar();
+    glfwTerminate();
+    return -1;
+  }
+
+  // Setup some OpenGL options
+  glEnable(GL_DEPTH_TEST);
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	GLuint programID = LoadShaders( argv[1]);//"../SimpleFragmentShader.fragmentshader" );
+
+  Shader pattern("../shaders/pattern.frag", argv[1]);
+  // Setup and compile our shaders
+  Shader shader("../shaders/model_loading.vs", "../shaders/model_loading.frag");  
+  // Load models
+  Model ourModel("../models/nanosuit/nanosuit.obj");
 
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
-
+  
 	static const GLfloat g_vertex_buffer_data[] = { 
 		 - 1.0, - 1.0, 1.0, 
 		 - 1.0, - 1.0, 1.0,
@@ -77,9 +112,9 @@ int main( int argc, char** argv )
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
-  GLuint time_id = glGetUniformLocation(programID, "time");
-  GLuint resolution_id = glGetUniformLocation(programID, "resolution");
-  GLuint mouse_id = glGetUniformLocation(programID, "mouse");
+  GLuint time_id = glGetUniformLocation(pattern.Program, "time");
+  GLuint resolution_id = glGetUniformLocation(pattern.Program, "resolution");
+  GLuint mouse_id = glGetUniformLocation(pattern.Program, "mouse");
 
   double lastTime = glfwGetTime(); int nbFrames = 0;
 
@@ -116,11 +151,11 @@ int main( int argc, char** argv )
 
 
   // Create and compile our GLSL program from the shaders
-  GLuint quad_programID = LoadShaders( "../Passthrough.vertexshader", "../WobblyTexture.fragmentshader" );
-  GLuint texID = glGetUniformLocation(quad_programID, "renderedTexture");
-  GLuint timeID = glGetUniformLocation(quad_programID, "time");
+  Shader quad("../shaders/Passthrough.vertexshader", "../shaders/WobblyTexture.fragmentshader");  
+  GLuint texID = glGetUniformLocation(quad.Program, "renderedTexture");
+  GLuint timeID = glGetUniformLocation(quad.Program, "time");
     
-	do{
+  while(!glfwWindowShouldClose(window)) {
     // Measure speed
     double currentTime = glfwGetTime();
     nbFrames++;
@@ -130,6 +165,8 @@ int main( int argc, char** argv )
        nbFrames = 0;
        lastTime = currentTime;
     }
+
+    
     int width;
     int height;
     glfwGetWindowSize(window, &width, &height);
@@ -139,16 +176,15 @@ int main( int argc, char** argv )
 
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-    glViewport(0,0,800,800); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+    glViewport(0,0,canvasSize,canvasSize); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
     // Use our shader
-    glUseProgram(programID);
+    pattern.Use();
     glUniform1f(time_id, glfwGetTime());
     glUniform2f(resolution_id, canvasSize, canvasSize);
     glUniform2f(mouse_id, xpos/canvasSize, ypos/canvasSize);
 		// Clear the screen
 		glClear( GL_COLOR_BUFFER_BIT );
-
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -166,19 +202,27 @@ int main( int argc, char** argv )
 		glDrawArrays(GL_TRIANGLES, 0, 6); // 3 indices starting at 0 -> 1 triangle
 
 		glDisableVertexAttribArray(0);
-
-
-
-    // Render to the screen
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // Render on the whole framebuffer, complete from the lower left corner to the upper right
     glViewport(0,0,width,height);
 
-    // Clear the screen
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Clear the colorbuffer
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    /***** Render to the screen *****/
+
+    // Set frame time
+    GLfloat currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
+    glfwPollEvents();
+    Do_Movement();
+
+    /******* Draw texture *********/
     // Use our shader
-    glUseProgram(quad_programID);
+    quad.Use();
 
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
@@ -202,21 +246,84 @@ int main( int argc, char** argv )
 
     // Draw the triangles !
     glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-
     glDisableVertexAttribArray(0);
 
+    /*********** Draw Model ****************
+    shader.Use();   // <-- Don't forget this one!
+    // Transformation matrices
+    glm::mat4 projection = glm::perspective(camera.Zoom, (float)800/(float)800, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+    // Draw the loaded model
+    glm::mat4 model;
+    model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // It's a bit too big for our scene, so scale it down
+    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    ourModel.Draw(shader);
+    /***************************/
 
 		// Swap buffers
 		glfwSwapBuffers(window);
-		glfwPollEvents();
 
-	} // Check if the ESC key was pressed or the window was closed
-	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-		   glfwWindowShouldClose(window) == 0 );
-
+	}
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
 	return 0;
 }
 
+
+#pragma region "User input"
+
+// Moves/alters the camera positions based on user input
+void Do_Movement()
+{
+    // Camera controls
+    if(keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+
+    if(action == GLFW_PRESS)
+        keys[key] = true;
+    else if(action == GLFW_RELEASE)
+        keys[key] = false;  
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if(firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    GLfloat xoffset = xpos - lastX;
+    GLfloat yoffset = lastY - ypos; 
+    
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+} 
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(yoffset);
+}
+
+#pragma endregion
