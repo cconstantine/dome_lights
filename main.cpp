@@ -211,12 +211,17 @@ int main( int argc, char** argv )
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /***** Render to the screen *****/
+    // Render to the screen
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    int size = width > height ? width : height;
+        // Render on the whole framebuffer, complete from the lower left corner to the upper right
+    glViewport((width - size)/2,(height - size) / 2,size,size);
 
     // Set frame time
     GLfloat currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
-
+    
     glfwPollEvents();
     Do_Movement();
 
