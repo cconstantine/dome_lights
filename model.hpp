@@ -37,9 +37,10 @@ public:
             this->meshes[i].Draw(shader);
     }
     
+    vector<Mesh> meshes;
+
 private:
     /*  Model Data  */
-    vector<Mesh> meshes;
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
 
@@ -99,6 +100,7 @@ private:
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
+
             // Normals
             vector.x = mesh->mNormals[i].x;
             vector.y = mesh->mNormals[i].y;
@@ -113,9 +115,10 @@ private:
                 vec.x = mesh->mTextureCoords[0][i].x; 
                 vec.y = mesh->mTextureCoords[0][i].y;
                 vertex.TexCoords = vec;
+
             }
             else
-                vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+                vertex.TexCoords = glm::vec2(0.5f, 0.5f);
             vertices.push_back(vertex);
         }
         // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -188,6 +191,7 @@ private:
 
 GLint TextureFromFile(const char* path, string directory)
 {
+    fprintf(stderr, "TextureFromFile: %s\n", path);
      //Generate texture ID and load texture data 
     string filename = string(path);
     filename = directory + '/' + filename;

@@ -1,6 +1,7 @@
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // Include GLEW
 #include <GL/glew.h>
@@ -68,6 +69,10 @@ int main( int argc, char** argv )
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
+  int width;
+  int height;
+  glfwGetWindowSize(window, &width, &height);
+
   // Ensure we can capture the escape key being pressed below
   //glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
   // Options
@@ -93,7 +98,8 @@ int main( int argc, char** argv )
   // Setup and compile our shaders
   Shader shader("../shaders/model_loading.vs", "../shaders/model_loading.frag");  
   // Load models
-  Model ourModel("../models/nanosuit/nanosuit.obj");
+  Model ourModel("../models/simple_dome.obj");
+  //Model ourModel("../models/nanosuit/nanosuit.obj");
 
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
@@ -101,16 +107,22 @@ int main( int argc, char** argv )
 
   
 	static const GLfloat g_vertex_buffer_data[] = { 
-		 - 1.0, - 1.0, 1.0, 
-		 - 1.0, - 1.0, 1.0,
-		   1.0, - 1.0, 1.0,
-		   1.0, - 1.0, 1.0
+    // Coordinates
+		 - 1.0, - 1.0,
+       1.0, - 1.0,
+     - 1.0,   1.0,
+
+		   1.0, - 1.0,
+       1.0,   1.0,
+     - 1.0,   1.0,
+
 	};
 	
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+
 
   GLuint time_id = glGetUniformLocation(pattern.Program, "time");
   GLuint resolution_id = glGetUniformLocation(pattern.Program, "resolution");
@@ -148,33 +160,25 @@ int main( int argc, char** argv )
     exit(1);
   }
   /**************************/
-
-
+  
+  
+  Texture texture;
+  texture.id = renderedTexture;
+  texture.type = "texture_diffuse";
+  texture.path = "something";
+  for(unsigned int i = 0;i < ourModel.meshes.size();++i) {
+    ourModel.meshes[i].textures.push_back(texture);
+  }
+  fprintf(stderr, "ladfkjsladfkjs\n");
+  
   // Create and compile our GLSL program from the shaders
   Shader quad("../shaders/Passthrough.vertexshader", "../shaders/WobblyTexture.fragmentshader");  
   GLuint texID = glGetUniformLocation(quad.Program, "renderedTexture");
   GLuint timeID = glGetUniformLocation(quad.Program, "time");
-    
-  while(!glfwWindowShouldClose(window)) {
-    // Measure speed
-    double currentTime = glfwGetTime();
-    nbFrames++;
-    if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
-       // printf and reset timer
-       printf("%f ms/frame\n", 1000.0/double(nbFrames));
-       nbFrames = 0;
-       lastTime = currentTime;
-    }
+  
 
-    
-    int width;
-    int height;
-    glfwGetWindowSize(window, &width, &height);
 
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-
-    // Render to our framebuffer
+    /******** Render pattern to framebuffer **********/
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
     glViewport(0,0,canvasSize,canvasSize); // Render on the whole framebuffer, complete from the lower left corner to the upper right
 
@@ -182,9 +186,63 @@ int main( int argc, char** argv )
     pattern.Use();
     glUniform1f(time_id, glfwGetTime());
     glUniform2f(resolution_id, canvasSize, canvasSize);
-    glUniform2f(mouse_id, xpos/canvasSize, ypos/canvasSize);
-		// Clear the screen
-		glClear( GL_COLOR_BUFFER_BIT );
+    // Clear the screen
+    glClear( GL_COLOR_BUFFER_BIT );
+
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+      0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+      2,                  // size
+      GL_FLOAT,           // type
+      GL_FALSE,           // normalized?
+      0,                  // stride
+      (void*)0            // array buffer offset
+    );
+
+    // Draw the triangle !
+    glDrawArrays(GL_TRIANGLES, 0, 6); // 3 indices starting at 0 -> 1 triangle
+
+    glDisableVertexAttribArray(0);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0,0,width,height);
+
+    /*************************************************/
+
+
+  while(!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
+    Do_Movement();
+
+    // Measure speed
+    double currentTime = glfwGetTime();
+    nbFrames++;
+    if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
+       // printf and reset timer
+       printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
+       nbFrames = 0;
+       lastTime = currentTime;
+    }
+
+    // Set frame time
+    GLfloat currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+    
+
+
+    /******** Render pattern to framebuffer **********/
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+     glViewport(0,0,canvasSize,canvasSize); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+
+  //   // Use our shader
+     pattern.Use();
+     glUniform1f(time_id, glfwGetTime());
+     glUniform2f(resolution_id, canvasSize, canvasSize);
+		// // Clear the screen
+		 //glClear( GL_COLOR_BUFFER_BIT );
 
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -203,58 +261,20 @@ int main( int argc, char** argv )
 
 		glDisableVertexAttribArray(0);
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0,0,width,height);
 
+    /*************************************************/
+
     // Clear the colorbuffer
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClearColor(0.05f, 0.15f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /***** Render to the screen *****/
-    // Render to the screen
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    int size = width > height ? width : height;
-        // Render on the whole framebuffer, complete from the lower left corner to the upper right
-    glViewport((width - size)/2,(height - size) / 2,size,size);
 
-    // Set frame time
-    GLfloat currentFrame = glfwGetTime();
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-    
-    glfwPollEvents();
-    Do_Movement();
-
-    /******* Draw texture *********/
-    // Use our shader
-    quad.Use();
-
-    // Bind our texture in Texture Unit 0
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, renderedTexture);
-    // Set our "renderedTexture" sampler to user Texture Unit 0
-    glUniform1i(texID, GL_TEXTURE0);
-
-    glUniform1f(timeID, (float)(glfwGetTime()*10.0f) );
-
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-      0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-      2,                  // size
-      GL_FLOAT,           // type
-      GL_FALSE,           // normalized?
-      0,                  // stride
-      (void*)0            // array buffer offset
-    );
-
-    // Draw the triangles !
-    glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-    glDisableVertexAttribArray(0);
-
-    /*********** Draw Model ****************
+    /*********** Draw Model ****************/
     shader.Use();   // <-- Don't forget this one!
+
     // Transformation matrices
     glm::mat4 projection = glm::perspective(camera.Zoom, (float)800/(float)800, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
@@ -263,15 +283,16 @@ int main( int argc, char** argv )
 
     // Draw the loaded model
     glm::mat4 model;
-    model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // It's a bit too big for our scene, so scale it down
+    //model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    //model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // It's a bit too big for our scene, so scale it down
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
     ourModel.Draw(shader);
+
     /***************************/
 
 		// Swap buffers
 		glfwSwapBuffers(window);
-
+    sleep(1);
 	}
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();

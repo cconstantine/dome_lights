@@ -42,6 +42,9 @@ public:
         this->indices = indices;
         this->textures = textures;
 
+        fprintf(stderr, "vertices: %d\n", (int)vertices.size());
+        fprintf(stderr, "indices: %d\n", (int)indices.size());
+        fprintf(stderr, "textures: %d\n", (int)textures.size());
         // Now that we have all the required data, set the vertex buffers and its attribute pointers.
         this->setupMesh();
     }
