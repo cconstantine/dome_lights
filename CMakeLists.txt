@@ -44,10 +44,7 @@ add_definitions(
 )
 
 
-add_executable(dome_lights main.cpp )
+add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp)
 
 target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
 
-add_executable(model_viewer model_viewer.cpp )
-
-target_link_libraries(model_viewer glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
