@@ -173,39 +173,6 @@ int main( int argc, char** argv )
   }
 
 
-    /******** Render pattern to framebuffer **********/
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-    glViewport(0,0,canvasSize,canvasSize); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-
-    // Use our shader
-    pattern.Use();
-    glUniform1f(time_id, glfwGetTime());
-    glUniform2f(resolution_id, canvasSize, canvasSize);
-    // Clear the screen
-    glClear( GL_COLOR_BUFFER_BIT );
-
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-      0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-      2,                  // size
-      GL_FLOAT,           // type
-      GL_FALSE,           // normalized?
-      0,                  // stride
-      (void*)0            // array buffer offset
-    );
-
-    // Draw the triangle !
-    glDrawArrays(GL_TRIANGLES, 0, 6); // 3 indices starting at 0 -> 1 triangle
-
-    glDisableVertexAttribArray(0);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0,0,width,height);
-
-    /*************************************************/
-
 
   while(!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -225,38 +192,7 @@ int main( int argc, char** argv )
     GLfloat currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
     lastFrame = currentFrame;
-    
 
-    /******* Framebuffer ******/
-
-    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-    GLuint FramebufferName = 0;
-    glGenFramebuffers(1, &FramebufferName);
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-
-    // The texture we're going to render to
-    GLuint renderedTexture;
-    glGenTextures(1, &renderedTexture);
-    glBindTexture(GL_TEXTURE_2D, renderedTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, canvasSize, canvasSize, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-    // Poor filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-    // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-
-    // Set the list of draw buffers.
-    GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-
-    // Always check that our framebuffer is ok
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      fprintf(stderr, "Failed to init GL_FRAMEBUFFER\n");
-      exit(1);
-    }
-    /**************************/
-    
 
     /******** Render pattern to framebuffer **********/
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -297,15 +233,6 @@ int main( int argc, char** argv )
     glViewport(0,0,width,height);
 
     /*************************************************/
-  
-  Texture texture;
-  texture.id = renderedTexture;
-  texture.type = "texture_diffuse";
-  texture.path = "something";
-  for(unsigned int i = 0;i < ourModel.meshes.size();++i) {
-    ourModel.meshes[i].textures.resize(1);
-    ourModel.meshes[i].textures[0] = texture;
-  }
     // Clear the colorbuffer
     glClearColor(0.05f, 0.15f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

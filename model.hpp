@@ -117,8 +117,12 @@ private:
                 vertex.TexCoords = vec;
 
             }
-            else
+            else {
                 vertex.TexCoords = glm::vec2(mesh->mVertices[i].x, mesh->mVertices[i].z);
+                vertex.TexCoords.x = (vertex.TexCoords.x + 4)/2;
+                vertex.TexCoords.y = (vertex.TexCoords.y + 4)/2;
+                fprintf(stderr, "UV: %2.4f, %2.4f\n", vertex.TexCoords.x, vertex.TexCoords.y);
+            }
             vertices.push_back(vertex);
         }
         // Now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
