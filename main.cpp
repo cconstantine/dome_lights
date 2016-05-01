@@ -167,9 +167,9 @@ int main( int argc, char** argv )
   texture.type = "texture_diffuse";
   texture.path = "something";
   for(unsigned int i = 0;i < ourModel.meshes.size();++i) {
-        ourModel.meshes[i].textures.resize(1);
-
-    ourModel.meshes[i].textures.push_back(texture);
+    if (ourModel.meshes[i].textures.size() == 0) {
+      ourModel.meshes[i].textures.push_back(texture);  
+    }
   }
 
 
