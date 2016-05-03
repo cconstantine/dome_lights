@@ -197,13 +197,14 @@ int main( int argc, char** argv )
 
   divisions = 72;
   for(int i = 0;i < divisions;i++) {
-    glm::vec3 posDelta = (dome.meshes[0].vertices[22].Position - dome.meshes[0].vertices[0].Position)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].Position;
-    glm::vec2 texDelta = (dome.meshes[0].vertices[22].TexCoords - dome.meshes[0].vertices[0].TexCoords)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].TexCoords;
+    glm::vec3 posDelta = (dome.meshes[0].vertices[90].Position - dome.meshes[0].vertices[0].Position)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].Position;
+    glm::vec2 texDelta = (dome.meshes[0].vertices[90].TexCoords - dome.meshes[0].vertices[0].TexCoords)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].TexCoords;
     
     ball = new Model("../models/ball.obj", texture, texDelta);
     ball->position = glm::translate(ball->position, posDelta );
     toDraw.push_back(ball);
   }
+
 
 
   ball = new Model("../models/ball.obj");
