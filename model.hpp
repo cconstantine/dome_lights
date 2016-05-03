@@ -11,22 +11,31 @@ using namespace std;
 #include <mesh.hpp>
 #include <shader.hpp>
 
+// Include GLM
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 class Model 
 {
 public:
     /*  Functions   */
     // Constructor, expects a filepath to a 3D model.
     Model(const GLchar* path);
+    Model(const GLchar* path, const Texture& defaultTexture, const glm::vec2& defaultTexCoords);
 
     // Draws the model, and thus all its meshes
     void Draw(Shader shader);
     
     vector<Mesh> meshes;
+    glm::mat4 position;
 
 private:
     /*  Model Data  */
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    Texture defaultTexture;
+    glm::vec2 defaultTexCoords;
 
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

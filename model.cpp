@@ -27,9 +27,19 @@ Model::Model(const GLchar* path)
   this->loadModel(path);
 }
 
+// Constructor, expects a filepath to a 3D model.
+Model::Model(const GLchar* path, const Texture& defaultTexture, const glm::vec2& defaultTexCoords )
+{
+  this->defaultTexture = defaultTexture;
+  this->defaultTexCoords = defaultTexCoords;
+  this->loadModel(path);
+}
+
 // Draws the model, and thus all its meshes
 void Model::Draw(Shader shader)
 {
+  glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(position));
+
   for(GLuint i = 0; i < this->meshes.size(); i++) {
     this->meshes[i].Draw(shader);
   }
@@ -40,6 +50,7 @@ void Model::Draw(Shader shader)
 // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string path)
 {
+  fprintf(stderr, "Loading model at: %s\n", path.c_str());
   // Read file via ASSIMP
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
@@ -110,7 +121,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
         }
         else {
-            vertex.TexCoords = glm::vec2(mesh->mVertices[i].x, mesh->mVertices[i].z);
+            vertex.TexCoords = defaultTexCoords;
         }
         vertices.push_back(vertex);
     }
@@ -139,6 +150,10 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         // 2. Specular maps
         vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+    }
+
+    if (textures.size() == 0) {
+      textures.push_back(defaultTexture);
     }
     
     // Return a mesh object created from the extracted mesh data

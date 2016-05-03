@@ -37,6 +37,7 @@ bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
+std::vector<Model*> toDraw;
 
 int main( int argc, char** argv )
 {
@@ -98,8 +99,8 @@ int main( int argc, char** argv )
   // Setup and compile our shaders
   Shader shader("../shaders/model_loading.vs", "../shaders/model_loading.frag");  
   // Load models
-  Model ourModel("../models/simple_dome.obj");
-  //Model ourModel("../models/nanosuit/nanosuit.obj");
+  Model dome("../models/dome.obj");
+  toDraw.push_back(&dome);
 
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
@@ -166,14 +167,48 @@ int main( int argc, char** argv )
   texture.id = renderedTexture;
   texture.type = "texture_diffuse";
   texture.path = "something";
-  for(unsigned int i = 0;i < ourModel.meshes.size();++i) {
-    if (ourModel.meshes[i].textures.size() == 0) {
-      ourModel.meshes[i].textures.push_back(texture);  
-    }
+
+  dome.meshes[1].textures.push_back(texture);  
+  
+  Model *ball;
+  ball = new Model("../models/ball.obj", texture, dome.meshes[0].vertices[0].TexCoords);
+  ball->position = glm::translate(ball->position, dome.meshes[0].vertices[0].Position);
+  toDraw.push_back(ball);
+
+  int divisions = 72;
+  for(int i = 0;i < divisions;i++) {
+    glm::vec3 posDelta = (dome.meshes[0].vertices[1].Position - dome.meshes[0].vertices[0].Position)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].Position;
+    glm::vec2 texDelta = (dome.meshes[0].vertices[1].TexCoords - dome.meshes[0].vertices[0].TexCoords)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].TexCoords;
+    
+    ball = new Model("../models/ball.obj", texture, texDelta);
+    ball->position = glm::translate(ball->position, posDelta );
+    toDraw.push_back(ball);
+  }
+
+  divisions = 72;
+  for(int i = 0;i < divisions;i++) {
+    glm::vec3 posDelta = (dome.meshes[0].vertices[2].Position - dome.meshes[0].vertices[0].Position)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].Position;
+    glm::vec2 texDelta = (dome.meshes[0].vertices[2].TexCoords - dome.meshes[0].vertices[0].TexCoords)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].TexCoords;
+    
+    ball = new Model("../models/ball.obj", texture, texDelta);
+    ball->position = glm::translate(ball->position, posDelta );
+    toDraw.push_back(ball);
+  }
+
+  divisions = 72;
+  for(int i = 0;i < divisions;i++) {
+    glm::vec3 posDelta = (dome.meshes[0].vertices[22].Position - dome.meshes[0].vertices[0].Position)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].Position;
+    glm::vec2 texDelta = (dome.meshes[0].vertices[22].TexCoords - dome.meshes[0].vertices[0].TexCoords)* (1.0f/divisions)*float(i) + dome.meshes[0].vertices[0].TexCoords;
+    
+    ball = new Model("../models/ball.obj", texture, texDelta);
+    ball->position = glm::translate(ball->position, posDelta );
+    toDraw.push_back(ball);
   }
 
 
-
+  ball = new Model("../models/ball.obj");
+  toDraw.push_back(ball);
+  
   while(!glfwWindowShouldClose(window)) {
     glfwPollEvents();
     Do_Movement();
@@ -248,12 +283,10 @@ int main( int argc, char** argv )
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-    // Draw the loaded model
-    glm::mat4 model;
-    //model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    //model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f)); // It's a bit too big for our scene, so scale it down
-    glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-    ourModel.Draw(shader);
+    for(std::vector<Model*>::iterator i = toDraw.begin();i != toDraw.end();i++) {
+      Model* m = *i;
+      m->Draw(shader);
+    }
 
     /***************************/
 
