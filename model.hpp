@@ -16,7 +16,11 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Model 
+class Drawable {
+public:
+    virtual void Draw(Shader shader) = 0;
+};
+class Model : public Drawable
 {
 public:
     /*  Functions   */
@@ -25,7 +29,7 @@ public:
     Model(const GLchar* path, const Texture& defaultTexture, const glm::vec2& defaultTexCoords);
 
     // Draws the model, and thus all its meshes
-    void Draw(Shader shader);
+    virtual void Draw(Shader shader);
     
     vector<Mesh> meshes;
     glm::mat4 position;
