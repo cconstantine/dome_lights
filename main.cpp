@@ -148,7 +148,7 @@ public:
   }
   void addStrip(int start, int end, int divisions) {
     Model *ball;
-    for(int i = 0;i < divisions;i++) {
+    for(int i = 0;i < divisions/2;i++) {
       glm::vec3 posDelta = (vertexes[end] - vertexes[start])* (1.0f/divisions)*float(i) + vertexes[start];
       glm::vec2 texDelta = (vtertexes[end] - vtertexes[start])* (1.0f/divisions)*float(i) + vtertexes[start];
       
@@ -324,26 +324,121 @@ int main( int argc, char** argv )
   domeLeds->addStrip(22, 28, 84);
   
 
-  domeLeds->addStrip( 4, 28, 82);
-  domeLeds->addStrip( 4,  2, 84);
-  domeLeds->addStrip( 4,  3, 82);
-  
-  domeLeds->addStrip( 5,  3, 82);
-  domeLeds->addStrip( 5,  1, 84);
-  domeLeds->addStrip( 5, 11, 82);
-  
-  domeLeds->addStrip(12, 11, 82);
-  domeLeds->addStrip(12, 10, 84);
-  domeLeds->addStrip(12, 17, 82);
+  domeLeds->addStrip( 3,  4, 84);
+  domeLeds->addStrip( 3,  6, 84);
+  domeLeds->addStrip( 3,  8, 84);
+  domeLeds->addStrip( 3,  5, 84);
 
-  domeLeds->addStrip(18, 17, 82);
-  domeLeds->addStrip(18, 16, 84);
-  domeLeds->addStrip(18, 23, 82);
-
-  domeLeds->addStrip(24, 23, 82);
-  domeLeds->addStrip(24, 22, 84);
-  domeLeds->addStrip(24, 28, 82);
+  domeLeds->addStrip( 5,  1, 82);
+  domeLeds->addStrip( 5,  8, 84);
+  domeLeds->addStrip( 5,  9, 82);
+  domeLeds->addStrip( 5, 13, 82);
   
+  domeLeds->addStrip(11,  5, 82);
+  domeLeds->addStrip(11, 13, 84);
+  domeLeds->addStrip(11, 14, 82);
+  domeLeds->addStrip(11, 12, 82);
+
+  domeLeds->addStrip(12, 10, 82);
+  domeLeds->addStrip(12, 14, 84);
+  domeLeds->addStrip(12, 15, 82);
+  domeLeds->addStrip(12, 19, 82);
+
+  domeLeds->addStrip(17, 12, 82);
+  domeLeds->addStrip(17, 19, 84);
+  domeLeds->addStrip(17, 20, 82);
+  domeLeds->addStrip(17, 18, 82);
+  
+  domeLeds->addStrip(18, 16, 82);
+  domeLeds->addStrip(18, 21, 84);
+  domeLeds->addStrip(18, 20, 82);
+  domeLeds->addStrip(18, 25, 82);
+  
+  domeLeds->addStrip(23, 18, 82);
+  domeLeds->addStrip(23, 25, 84);
+  domeLeds->addStrip(23, 26, 82);
+  domeLeds->addStrip(23, 24, 82);
+  
+  domeLeds->addStrip(24, 22, 82);
+  domeLeds->addStrip(24, 26, 84);
+  domeLeds->addStrip(24, 22, 82);
+  domeLeds->addStrip(24, 29, 82);
+  
+  domeLeds->addStrip(28, 24, 82);
+  domeLeds->addStrip(28, 29, 84);
+  domeLeds->addStrip(28, 30, 82);
+  domeLeds->addStrip(28,  4, 82);
+  
+  domeLeds->addStrip( 4,  2, 82);
+  domeLeds->addStrip( 4, 30, 84);
+  domeLeds->addStrip( 4,  7, 82);
+  domeLeds->addStrip( 4,  6, 82);
+
+
+
+  domeLeds->addStrip( 7, 45, 72);
+  domeLeds->addStrip( 7, 31, 72);
+  domeLeds->addStrip( 7,  6, 72);
+
+  domeLeds->addStrip( 6, 31, 82);
+  domeLeds->addStrip( 6, 32, 84);
+  domeLeds->addStrip( 6,  8, 82);
+
+  domeLeds->addStrip( 8, 32, 84);
+  domeLeds->addStrip( 8, 33, 82);
+  domeLeds->addStrip( 8,  9, 72);
+
+
+  domeLeds->addStrip( 9, 33, 72);
+  domeLeds->addStrip( 9, 34, 72);
+  domeLeds->addStrip( 9, 13, 72);
+
+  domeLeds->addStrip(13, 34, 82);
+  domeLeds->addStrip(13, 35, 84);
+  domeLeds->addStrip(13, 14, 82);
+
+  domeLeds->addStrip(14, 35, 84);
+  domeLeds->addStrip(14, 36, 82);
+  domeLeds->addStrip(14, 15, 72);
+
+
+  domeLeds->addStrip(15, 36, 72);
+  domeLeds->addStrip(15, 37, 72);
+  domeLeds->addStrip(15, 19, 72);
+
+  domeLeds->addStrip(19, 37, 82);
+  domeLeds->addStrip(19, 38, 84);
+  domeLeds->addStrip(19, 20, 82);
+
+  domeLeds->addStrip(20, 38, 84);
+  domeLeds->addStrip(20, 39, 82);
+  domeLeds->addStrip(20, 21, 72);
+
+
+  domeLeds->addStrip(21, 39, 72);
+  domeLeds->addStrip(21, 40, 72);
+  domeLeds->addStrip(21, 25, 72);
+
+  domeLeds->addStrip(25, 40, 82);
+  domeLeds->addStrip(25, 41, 84);
+  domeLeds->addStrip(25, 26, 82);
+
+  domeLeds->addStrip(26, 41, 84);
+  domeLeds->addStrip(26, 42, 82);
+  domeLeds->addStrip(26, 27, 72);
+
+
+  domeLeds->addStrip(27, 42, 72);
+  domeLeds->addStrip(27, 43, 72);
+  domeLeds->addStrip(27, 29, 72);
+
+  domeLeds->addStrip(29, 43, 82);
+  domeLeds->addStrip(29, 44, 84);
+  domeLeds->addStrip(29, 30, 82);
+
+  domeLeds->addStrip(30, 44, 84);
+  domeLeds->addStrip(30, 45, 82);
+  domeLeds->addStrip(30,  7, 72);
 
 
 
