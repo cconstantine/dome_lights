@@ -31,8 +31,9 @@ public:
     // Draws the model, and thus all its meshes
     virtual void Draw(Shader shader);
     
+    void addInstance(glm::vec3 posDelta, glm::vec2 texDelta);
+    
     vector<Mesh> meshes;
-    glm::mat4 position;
 
 private:
     /*  Model Data  */

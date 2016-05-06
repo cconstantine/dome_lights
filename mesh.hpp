@@ -31,6 +31,9 @@ public:
   vector<GLuint> indices;
   vector<Texture> textures;
 
+  vector<glm::mat4> instancePositionOffset;
+  vector<glm::vec2>  instanceTextureOffset;
+
   /*  Functions  */
   // Constructor
   Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures);
@@ -40,7 +43,7 @@ public:
 
 private:
   /*  Render data  */
-  GLuint VAO, VBO, EBO;
+  GLuint VAO, VBO, EBO, POS, TPOS;
 
   /*  Functions    */
   // Initializes all the buffer objects/arrays

@@ -35,11 +35,15 @@ Model::Model(const GLchar* path, const Texture& defaultTexture, const glm::vec2&
   this->loadModel(path);
 }
 
+void Model::addInstance(glm::vec3 posDelta, glm::vec2 texDelta) {
+  for(GLuint i = 0; i < this->meshes.size(); i++) {
+    meshes[i].instancePositionOffset.push_back(glm::translate(glm::mat4(), posDelta ));
+    meshes[i].instanceTextureOffset.push_back(texDelta);
+  }
+}
 // Draws the model, and thus all its meshes
 void Model::Draw(Shader shader)
 {
-  glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(position));
-
   for(GLuint i = 0; i < this->meshes.size(); i++) {
     this->meshes[i].Draw(shader);
   }
@@ -50,7 +54,7 @@ void Model::Draw(Shader shader)
 // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string path)
 {
-  fprintf(stderr, "Loading model at: %s\n", path.c_str());
+  //fprintf(stderr, "Loading model at: %s\n", path.c_str());
   // Read file via ASSIMP
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
