@@ -240,7 +240,7 @@ int main( int argc, char** argv )
   
   domeLeds->addStrip(24, 22, 82);
   domeLeds->addStrip(24, 26, 84);
-  domeLeds->addStrip(24, 22, 82);
+  domeLeds->addStrip(24, 27, 82);
   domeLeds->addStrip(24, 29, 82);
   
   domeLeds->addStrip(28, 24, 82);
