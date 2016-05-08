@@ -20,8 +20,7 @@ struct Vertex {
 
 struct Texture {
   GLuint id;
-  string type;
-  aiString path;
+  GLenum target;
 };
 
 class Mesh {
@@ -32,7 +31,8 @@ public:
   vector<Texture> textures;
 
   vector<glm::mat4> instancePositionOffset;
-  vector<glm::vec2>  instanceTextureOffset;
+  vector<glm::vec2> instanceTextureOffset;
+  vector<float>     instanceIndex;
 
   /*  Functions  */
   // Constructor

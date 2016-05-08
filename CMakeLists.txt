@@ -4,10 +4,9 @@ project(candy_pusher)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 #find_package(OpenGL REQUIRED)
-#find_package (SOIL REQUIRED)
 
 # Find all the libs that don't require extra parameters
-foreach(lib OpenGL SOIL)
+foreach(lib OpenGL )
 	find_package(${lib} REQUIRED)
 	include_directories(${${lib}_INCLUDE_DIRS})
 	list(APPEND LIBS ${${lib}_LIBRARIES})
@@ -44,7 +43,7 @@ add_definitions(
 )
 
 
-add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp)
+add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp led_cluster.cpp renderer.cpp)
 
 target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
 

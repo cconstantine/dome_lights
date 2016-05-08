@@ -6,6 +6,7 @@ layout (location = 3) in vec2 texCoordsOffset;
 layout (location = 4) in mat4 model;
 
 out vec2 TexCoords;
+out vec4 Position;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -14,4 +15,5 @@ void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0f);
     TexCoords = texCoords + texCoordsOffset;
+    Position = model * vec4(position, 1.0f);
 }
