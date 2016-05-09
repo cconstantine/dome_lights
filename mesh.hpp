@@ -25,6 +25,15 @@ struct Texture {
 
 class Mesh {
 public:
+  // Constructor
+  Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures);
+
+  // Render the mesh
+  void Draw(Shader shader);
+
+  /*  Render data  */
+  GLuint VAO, VBO, EBO, POS, TPOS, IDX;
+
   /*  Mesh Data  */
   vector<Vertex> vertices;
   vector<GLuint> indices;
@@ -34,16 +43,7 @@ public:
   vector<glm::vec2> instanceTextureOffset;
   vector<float>     instanceIndex;
 
-  /*  Functions  */
-  // Constructor
-  Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures);
-
-  // Render the mesh
-  void Draw(Shader shader);
-
 private:
-  /*  Render data  */
-  GLuint VAO, VBO, EBO, POS, TPOS;
 
   /*  Functions    */
   // Initializes all the buffer objects/arrays

@@ -8,23 +8,39 @@
 #include <model.hpp>
 #include <camera.hpp>
 
-class SceneRender {
+class ScreenRender {
 
 public:
-  SceneRender(GLFWwindow* window);
+  ScreenRender(GLFWwindow* window);
 
-  void render(Camera& camera, std::vector<Drawable*>& models);
+  void render(Camera& camera, std::vector<Model*>& models);
 
 private:
   Shader shader;
-  GLFWwindow* window;
 
+  GLFWwindow* window;
+  int width, height;
+};
+
+class FrameBufferRender {
+
+public:
+  FrameBufferRender(int width, int height);
+
+  void render(Camera& camera, std::vector<Model*>& models);
+
+  Texture getTexture();
+private:
+  Shader shader;
+
+  GLuint FramebufferName;
+  GLuint renderedTexture;
   int width, height;
 };
 
 class PatternRender {
 public:
-  PatternRender(int canvasSize);
+  PatternRender(int width, int height);
 
   void render(Shader& pattern);
 
@@ -35,6 +51,6 @@ private:
 
   GLuint FramebufferName;
   GLuint renderedTexture;
-  int canvasSize;
+  int width, height;
 
 };

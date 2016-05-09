@@ -1,6 +1,9 @@
 #include <led_cluster.hpp>
 
-LedCluster::LedCluster(const Texture& texture) : Model("../models/ball.obj", texture, glm::vec2()) {
+LedCluster::LedCluster(const Texture& texture) 
+: balls("../models/ball.obj",  texture),
+  plane("../models/plane.obj", texture) {
+  
   vertexes.push_back(glm::vec3(0.000000,2.728441,0.000000));
   vertexes.push_back(glm::vec3(1.086628, 2.526190, 0.353067));
   vertexes.push_back(glm::vec3(0.000000, 2.526190, 1.142548));
@@ -240,10 +243,13 @@ LedCluster::LedCluster(const Texture& texture) : Model("../models/ball.obj", tex
 
 void LedCluster::addStrip(int start, int end, int divisions) {
   for(int i = 0;i < divisions;i++) {
-    glm::vec3 posDelta = (vertexes[end] - vertexes[start])* (1.0f/divisions)*float(i) + vertexes[start];
+    glm::vec3 ballPosDelta = (vertexes[end] - vertexes[start])* (1.0f/divisions)*float(i) + vertexes[start];
     glm::vec2 texDelta = (vtertexes[end] - vtertexes[start])* (1.0f/divisions)*float(i) + vtertexes[start];
     
+    glm::vec3 planePosDelta(2.0*plane.numInstances(), 0, 0);
 
-    addInstance(posDelta, texDelta);
+    balls.addInstance(ballPosDelta, texDelta);
+    plane.addInstance(planePosDelta, texDelta);
   }
 }
+

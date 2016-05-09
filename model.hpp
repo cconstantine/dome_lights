@@ -33,6 +33,7 @@ public:
     virtual void Draw(Shader shader);
     
     void addInstance(glm::vec3 posDelta, glm::vec2 texDelta);
+    int numInstances();
 
 
 private:

@@ -35,8 +35,6 @@ void Mesh::Draw(Shader shader)
 {
 
   // Bind appropriate textures
-  GLuint diffuseNr = 1;
-  GLuint specularNr = 1;
   for(GLuint i = 0; i < this->textures.size(); i++)
   {
     glActiveTexture(GL_TEXTURE0 + i); // Active proper texture unit before binding
@@ -65,12 +63,14 @@ void Mesh::setupMesh()
 {
   // Create buffers/arrays
   glGenVertexArrays(1, &this->VAO);
+  glBindVertexArray(this->VAO);
+
   glGenBuffers(1, &this->VBO);
   glGenBuffers(1, &this->EBO);
   glGenBuffers(1, &this->POS);
   glGenBuffers(1, &this->TPOS);
+  glGenBuffers(1, &this->IDX);
 
-  glBindVertexArray(this->VAO);
   // Load data into vertex buffers
   glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
   // A great thing about structs is that their memory layout is sequential for all its items.
@@ -119,7 +119,4 @@ void Mesh::setupMesh()
   glEnableVertexAttribArray(7); 
   glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3l * vec4Size));
   glVertexAttribDivisor(7, 1);
-
-
-  glBindVertexArray(0);
 }

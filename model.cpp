@@ -49,6 +49,11 @@ void Model::addInstance(glm::vec3 posDelta, glm::vec2 texDelta) {
     meshes[i].instanceIndex.push_back(float(meshes[i].instanceIndex.size()));
   }
 }
+
+int Model::numInstances() {
+  return meshes[0].instancePositionOffset.size();
+}
+
 // Draws the model, and thus all its meshes
 void Model::Draw(Shader shader)
 {

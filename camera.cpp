@@ -8,8 +8,27 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
+OrthoCamera::OrthoCamera(int from, int to) : from(float(from)), to(float(to))
+{
+
+}
+
+glm::mat4 OrthoCamera::GetViewMatrix() {
+  return glm::mat4(
+     1.000000, -0.000000,  0.000000, 0.000000,
+     0.000000,  0.000000,  1.000000, 0.000000,
+    -0.000000, -1.000000,  0.000000, 0.000000,
+    -0.000000, -0.000000, -0.000000, 1.000000);
+}
+
+glm::mat4 OrthoCamera::GetProjectionMatrix() {
+  return glm::ortho(from, to, -1.0f, 1.0f, -10.0f, 10000.0f);
+}
+
+
 // Constructor with vectors
-Camera::Camera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+IsoCamera::IsoCamera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
 {
   this->Position = position;
   this->WorldUp = up;
@@ -19,7 +38,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch) : F
 }
 
 // Constructor with scalar values
-Camera::Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+IsoCamera::IsoCamera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
 {
   this->Position = glm::vec3(posX, posY, posZ);
   this->WorldUp = glm::vec3(upX, upY, upZ);
@@ -29,13 +48,17 @@ Camera::Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat up
 }
 
 // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-glm::mat4 Camera::GetViewMatrix()
+glm::mat4 IsoCamera::GetViewMatrix()
 {
     return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
 }
 
+glm::mat4 IsoCamera::GetProjectionMatrix() {
+  return glm::perspective(Zoom, (float)800/(float)800, 0.01f, 1000.0f);
+}
+
 // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
+void IsoCamera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
 {
   GLfloat velocity = this->MovementSpeed * deltaTime;
   if (direction == FORWARD)
@@ -49,7 +72,7 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
 }
 
 // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-void Camera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch)
+void IsoCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch)
 {
   xoffset *= this->MouseSensitivity;
   yoffset *= this->MouseSensitivity;
@@ -71,7 +94,7 @@ void Camera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean co
 }
 
 // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-void Camera::ProcessMouseScroll(GLfloat yoffset)
+void IsoCamera::ProcessMouseScroll(GLfloat yoffset)
 {
   if (this->Zoom >= 1.0f && this->Zoom <= 45.0f)
     this->Zoom -= yoffset;
@@ -82,7 +105,7 @@ void Camera::ProcessMouseScroll(GLfloat yoffset)
 }
 
 // Calculates the front vector from the Camera's (updated) Eular Angles
-void Camera::updateCameraVectors()
+void IsoCamera::updateCameraVectors()
 {
   // Calculate the new Front vector
   glm::vec3 front;

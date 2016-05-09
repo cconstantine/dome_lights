@@ -31,7 +31,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+IsoCamera camera(glm::vec3(0.0f, 1.0f, 2.8f));
+
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -39,7 +40,8 @@ bool firstMouse = true;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-std::vector<Drawable*> toDraw;
+std::vector<Model*> toDraw;
+std::vector<Model*> toDrawFb;
 
 int main( int argc, char** argv )
 {
@@ -89,28 +91,34 @@ int main( int argc, char** argv )
   // Setup some OpenGL options
   glEnable(GL_DEPTH_TEST);
 
-	// Dark blue background
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-
 
   Shader pattern("../shaders/pattern.frag", argv[1]);
 
-
-  double lastTime = glfwGetTime(); int nbFrames = 0;
-
-  PatternRender pattern_render(canvasSize);
+  PatternRender pattern_render(canvasSize, canvasSize);
   Texture texture = pattern_render.getTexture();
+
+  LedCluster domeLeds(texture);
+  toDraw.push_back(&domeLeds.balls);
+  toDrawFb.push_back(&domeLeds.plane);
+
+  //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
+  FrameBufferRender fb_screen(domeLeds.balls.numInstances(), 1);
+
+  Texture fb_texture = fb_screen.getTexture();
 
   // Load models
   Model screen("../models/screen.obj", texture);
-  screen.addInstance(glm::vec3(), glm::vec2());
+  screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0));
   toDraw.push_back(&screen);
 
-  LedCluster domeLeds(texture);
-  toDraw.push_back(&domeLeds);
+  Model panel("../models/panel.obj", fb_texture);
+  panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
+  toDraw.push_back(&panel);
 
-  SceneRender scene(window);
+  OrthoCamera stripCamera(-1.0f, (float)(domeLeds.balls.numInstances()*2));
+  ScreenRender scene(window);
 
+  double lastTime = glfwGetTime(); int nbFrames = 0;
   while(!glfwWindowShouldClose(window)) {
     glfwPollEvents();
     Do_Movement();
@@ -118,9 +126,8 @@ int main( int argc, char** argv )
     // Measure speed
     double currentTime = glfwGetTime();
     nbFrames++;
-    if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
-       // printf and reset timer
-       printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
+    if ( currentTime - lastTime >= 1.0 ){
+       //printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
        nbFrames = 0;
        lastTime = currentTime;
     }
@@ -131,6 +138,8 @@ int main( int argc, char** argv )
     lastFrame = currentFrame;
 
     pattern_render.render(pattern);
+
+    fb_screen.render(stripCamera, toDrawFb);
 
     scene.render(camera, toDraw);
   
