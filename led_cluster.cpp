@@ -1,9 +1,9 @@
 #include <led_cluster.hpp>
 
-LedCluster::LedCluster(const Texture& texture) 
+LedCluster::LedCluster(const Texture& texture)
 : balls("../models/ball.obj",  texture),
   plane("../models/plane.obj", texture) {
-  
+
   vertexes.push_back(glm::vec3(0.000000,2.728441,0.000000));
   vertexes.push_back(glm::vec3(1.086628, 2.526190, 0.353067));
   vertexes.push_back(glm::vec3(0.000000, 2.526190, 1.142548));
@@ -246,7 +246,10 @@ void LedCluster::addStrip(int start, int end, int divisions) {
     glm::vec3 ballPosDelta = (vertexes[end] - vertexes[start])* (1.0f/divisions)*float(i) + vertexes[start];
     glm::vec2 texDelta = (vtertexes[end] - vtertexes[start])* (1.0f/divisions)*float(i) + vtertexes[start];
     
-    glm::vec3 planePosDelta(2.0*plane.numInstances(), 0, 0);
+    int count = plane.numInstances();
+    int x = count % 1000;
+    int y = count / 1000;
+    glm::vec3 planePosDelta((float)x, (float)y, 0.0f);
 
     balls.addInstance(ballPosDelta, texDelta);
     plane.addInstance(planePosDelta, texDelta);

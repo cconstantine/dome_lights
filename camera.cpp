@@ -9,21 +9,21 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-OrthoCamera::OrthoCamera(int from, int to) : from(float(from)), to(float(to))
+OrthoCamera::OrthoCamera( int left, int right, int bottom, int top ) : left(float(left)), right(float(right)), bottom(float(bottom)), top(float(top))
 {
 
 }
 
 glm::mat4 OrthoCamera::GetViewMatrix() {
   return glm::mat4(
-     1.000000, -0.000000,  0.000000, 0.000000,
-     0.000000,  0.000000,  1.000000, 0.000000,
-    -0.000000, -1.000000,  0.000000, 0.000000,
-    -0.000000, -0.000000, -0.000000, 1.000000);
+     1.000000, 0.000000, 0.000000, 0.000000,
+     0.000000, 1.000000, 0.000000, 0.000000,
+     0.000000, 0.000000, 1.000000, 0.000000,
+     0.000000, 0.000000, 0.000000, 1.000000);
 }
 
 glm::mat4 OrthoCamera::GetProjectionMatrix() {
-  return glm::ortho(from, to, -1.0f, 1.0f, -10.0f, 10000.0f);
+  return glm::ortho(left, right, bottom, top, -10.0f, 10.0f);
 }
 
 

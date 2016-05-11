@@ -102,7 +102,7 @@ int main( int argc, char** argv )
   toDrawFb.push_back(&domeLeds.plane);
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
-  FrameBufferRender fb_screen(domeLeds.balls.numInstances(), 1);
+  FrameBufferRender fb_screen(1000, 10);
 
   Texture fb_texture = fb_screen.getTexture();
 
@@ -115,7 +115,7 @@ int main( int argc, char** argv )
   panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
   toDraw.push_back(&panel);
 
-  OrthoCamera stripCamera(-1.0f, (float)(domeLeds.balls.numInstances()*2));
+  OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
   ScreenRender scene(window);
 
   double lastTime = glfwGetTime(); int nbFrames = 0;

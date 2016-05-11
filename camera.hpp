@@ -33,11 +33,11 @@ public:
 
 class OrthoCamera : public Camera {
 public:
-  OrthoCamera(int from, int to);
+  OrthoCamera( int left, int right, int bottom, int top );
   virtual glm::mat4 GetViewMatrix();
   virtual glm::mat4 GetProjectionMatrix();
 private:
-  float from, to;
+  float left, right, bottom, top;
 };
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
