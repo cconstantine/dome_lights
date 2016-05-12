@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <vector>
 
 // Include GLEW
 #include <GL/glew.h>
@@ -24,6 +25,8 @@ const int canvasSize = 400;
 #include <led_cluster.hpp>
 #include <renderer.hpp>
 
+#include <opc_client.h>
+
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -42,6 +45,7 @@ GLfloat lastFrame = 0.0f;
 
 std::vector<Model*> toDraw;
 std::vector<Model*> toDrawFb;
+OPCClient opc_client;
 
 int main( int argc, char** argv )
 {
@@ -101,6 +105,13 @@ int main( int argc, char** argv )
   toDraw.push_back(&domeLeds.balls);
   toDrawFb.push_back(&domeLeds.plane);
 
+  std::vector<uint8_t> frameBuffer;
+  opc_client.resolve("stardome.local");
+  int frameBytes =1000*10 * 3;
+  frameBuffer.resize(sizeof(OPCClient::Header) + frameBytes);
+
+  OPCClient::Header::view(frameBuffer).init(0, opc_client.SET_PIXEL_COLORS, frameBytes);
+
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
   FrameBufferRender fb_screen(1000, 10);
 
@@ -111,12 +122,13 @@ int main( int argc, char** argv )
   screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0));
   toDraw.push_back(&screen);
 
-  Model panel("../models/panel.obj", fb_texture);
-  panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
-  toDraw.push_back(&panel);
+  //Model panel("../models/panel.obj", fb_texture);
+  //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
+  //toDraw.push_back(&panel);
 
   OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
   ScreenRender scene(window);
+
 
   double lastTime = glfwGetTime(); int nbFrames = 0;
   while(!glfwWindowShouldClose(window)) {
@@ -127,7 +139,7 @@ int main( int argc, char** argv )
     double currentTime = glfwGetTime();
     nbFrames++;
     if ( currentTime - lastTime >= 1.0 ){
-       //printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
+       printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
        nbFrames = 0;
        lastTime = currentTime;
     }
@@ -139,10 +151,11 @@ int main( int argc, char** argv )
 
     pattern_render.render(pattern);
 
-    fb_screen.render(stripCamera, toDrawFb);
-
+    fb_screen.render(stripCamera, toDrawFb, OPCClient::Header::view(frameBuffer).data());
+    
+    opc_client.write(frameBuffer);
     scene.render(camera, toDraw);
-  
+
 		// Swap buffers
 		glfwSwapBuffers(window);
     //sleep(1);

@@ -25,9 +25,9 @@ private:
 class FrameBufferRender {
 
 public:
-  FrameBufferRender(int width, int height);
+  FrameBufferRender(int width, int heightFrameBufferRender);
 
-  void render(Camera& camera, std::vector<Model*>& models);
+  void render(Camera& camera, std::vector<Model*>& models, unsigned char *dest);
 
   Texture getTexture();
 private:

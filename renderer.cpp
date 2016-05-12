@@ -1,6 +1,7 @@
 #include <renderer.hpp>
 
 #include <glm/gtx/string_cast.hpp>
+#include <fstream>
 
 ScreenRender::ScreenRender(GLFWwindow* window) : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"), window(window) {
   glfwGetWindowSize(window, &width, &height);
@@ -27,7 +28,11 @@ void ScreenRender::render(Camera& camera, std::vector<Model*>& models) {
     m->Draw(shader);
   }
 }
-FrameBufferRender::FrameBufferRender(int width, int height) : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"), width(width), height(height) {
+FrameBufferRender::FrameBufferRender(int width, int height)
+ : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"),
+   width(width),
+   height(height)
+{
   // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
   glGenFramebuffers(1, &FramebufferName);
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
@@ -57,7 +62,7 @@ FrameBufferRender::FrameBufferRender(int width, int height) : shader("../shaders
   }
 }
 
-void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models) {
+void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsigned char* imageBuffer) {
 
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
   glViewport(0,0,width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
@@ -78,6 +83,21 @@ void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models) {
     Drawable* m = *i;
     m->Draw(shader);
   }
+
+  glBindTexture(GL_TEXTURE_2D, renderedTexture);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer);
+
+  // unsigned char xa= width % 256;
+  // unsigned char xb= (width-xa)/256;
+  // unsigned char ya= height % 256;
+  // unsigned char yb= (height-ya)/256;//assemble the header
+  // unsigned char header[18]={0,0,2,0,0,0,0,0,0,0,0,0,xa,xb,ya,yb,24,0};
+  // // write header and data to file
+  // std::fstream file("test.tga", std::ios::out | std::ios::binary);
+  // file.write (reinterpret_cast<char *>(header), sizeof(header));
+  // file.write (reinterpret_cast<char *>(imageBuffer), 3*width*height);
+  // file.close();
 }
 
 Texture FrameBufferRender::getTexture() {
@@ -86,6 +106,7 @@ Texture FrameBufferRender::getTexture() {
   t.target = GL_TEXTURE_2D;
   return t;
 }
+
 
 PatternRender::PatternRender(int width, int height) : width(width), height(height) {
   glGenVertexArrays(1, &VertexArrayID);
