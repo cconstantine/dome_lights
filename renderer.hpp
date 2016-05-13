@@ -36,6 +36,8 @@ private:
   GLuint FramebufferName;
   GLuint renderedTexture;
   int width, height;
+
+  GLuint pbos[2];
 };
 
 class PatternRender {

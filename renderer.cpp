@@ -60,6 +60,12 @@ FrameBufferRender::FrameBufferRender(int width, int height)
     fprintf(stderr, "Failed to init GL_FRAMEBUFFER\n");
     exit(1);
   }
+
+  glGenBuffers(2, pbos);
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[0]);
+  glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[1]);
+  glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
 }
 
 void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsigned char* imageBuffer) {
@@ -84,10 +90,20 @@ void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsi
     m->Draw(shader);
   }
 
-  glBindTexture(GL_TEXTURE_2D, renderedTexture);
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer);
+  // glBindTexture(GL_TEXTURE_2D, renderedTexture);
+  // glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  // glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer);
 
+
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[0]);
+  glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+  GLubyte* src = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+  if(src)
+  {
+    memcpy(imageBuffer, src, 3*1000*10);
+    glUnmapBufferARB(GL_PIXEL_PACK_BUFFER);
+  }
   // unsigned char xa= width % 256;
   // unsigned char xb= (width-xa)/256;
   // unsigned char ya= height % 256;
