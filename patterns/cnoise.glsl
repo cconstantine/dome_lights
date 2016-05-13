@@ -1,3 +1,5 @@
+#version 330 core
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -5,6 +7,9 @@ precision mediump float;
 
 uniform float time;
 uniform vec2 resolution;
+
+out vec4 color_out;
+
 //
 // GLSL textureless classic 3D noise "cnoise",
 // with an RSL-style periodic variant "pnoise".
@@ -148,7 +153,7 @@ void main( void ) {
 	}
 	curColor = color[4]*ns;
   const float rotation = 4.0;
-	gl_FragColor = vec4(
+	color_out = vec4(
     sin(curColor.x + time/rotation + PI*2.0*1.0/3.0),
     sin(curColor.y + time/rotation + PI*2.0*2.0/3.0),
     sin(curColor.z + time/rotation + PI*2.0*3.0/3.0),
