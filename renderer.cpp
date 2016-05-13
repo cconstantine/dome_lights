@@ -66,6 +66,8 @@ FrameBufferRender::FrameBufferRender(int width, int height)
   glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
   glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[1]);
   glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
+
+  active_pbo = 0;
 }
 
 void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsigned char* imageBuffer) {
@@ -95,14 +97,16 @@ void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsi
   // glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer);
 
 
-  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[0]);
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[active_pbo]);
   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+  active_pbo = (active_pbo + 1) % 2;
 
+  glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[active_pbo]);
   GLubyte* src = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
   if(src)
   {
     memcpy(imageBuffer, src, 3*1000*10);
-    glUnmapBufferARB(GL_PIXEL_PACK_BUFFER);
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
   }
   // unsigned char xa= width % 256;
   // unsigned char xb= (width-xa)/256;

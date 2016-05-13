@@ -38,6 +38,7 @@ private:
   int width, height;
 
   GLuint pbos[2];
+  GLuint active_pbo;
 };
 
 class PatternRender {
