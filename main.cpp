@@ -17,6 +17,9 @@ GLFWwindow* window;
 #include <glm/gtc/type_ptr.hpp>
 using namespace glm;
 
+#include <btBulletDynamicsCommon.h>
+#include <btBulletCollisionCommon.h>
+
 const int canvasSize = 400;
 
 #include <shader.hpp>
@@ -46,6 +49,22 @@ GLfloat lastFrame = 0.0f;
 std::vector<Model*> toDraw;
 std::vector<Model*> toDrawFb;
 OPCClient opc_client;
+
+
+// Build the broadphase
+btBroadphaseInterface* broadphase = new btDbvtBroadphase();
+
+// Set up the collision configuration and dispatcher
+btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
+btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
+
+// The actual physics solver
+btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
+
+// The world.
+btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfiguration);
+//dynamicsWorld->setGravity(btVector3(0,-9.81f,0));
+
 
 int main( int argc, char** argv )
 {
@@ -122,9 +141,9 @@ int main( int argc, char** argv )
   screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0));
   toDraw.push_back(&screen);
 
-  //Model panel("../models/panel.obj", fb_texture);
-  //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
-  //toDraw.push_back(&panel);
+  Model panel("../models/panel.obj", fb_texture);
+  panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
+  toDraw.push_back(&panel);
 
   OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
   ScreenRender scene(window);

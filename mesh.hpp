@@ -32,7 +32,7 @@ public:
   void Draw(Shader shader);
 
   /*  Render data  */
-  GLuint VAO, VBO, EBO, POS, TPOS, IDX;
+  GLuint VAO, VBO, EBO, POS, TPOS, PROJ;
 
   /*  Mesh Data  */
   vector<Vertex> vertices;
@@ -41,7 +41,7 @@ public:
 
   vector<glm::mat4> instancePositionOffset;
   vector<glm::vec2> instanceTextureOffset;
-  vector<float>     instanceIndex;
+  vector<glm::mat4> instanceProj;
 
 private:
 

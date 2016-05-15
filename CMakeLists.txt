@@ -45,5 +45,5 @@ add_definitions(
 
 add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp led_cluster.cpp renderer.cpp)
 
-target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
+target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp BulletDynamics LinearMath BulletCollision ${LIBS})
 

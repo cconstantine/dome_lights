@@ -69,7 +69,7 @@ void Mesh::setupMesh()
   glGenBuffers(1, &this->EBO);
   glGenBuffers(1, &this->POS);
   glGenBuffers(1, &this->TPOS);
-  glGenBuffers(1, &this->IDX);
+  glGenBuffers(1, &this->PROJ);
 
   // Load data into vertex buffers
   glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
@@ -119,4 +119,11 @@ void Mesh::setupMesh()
   glEnableVertexAttribArray(7); 
   glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3l * vec4Size));
   glVertexAttribDivisor(7, 1);
+
+
+  // Instance projection offset
+  glBindBuffer(GL_ARRAY_BUFFER, this->TPOS);
+  glEnableVertexAttribArray(3); 
+  glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (GLvoid*)0);
+  glVertexAttribDivisor(3, 1);
 }

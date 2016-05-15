@@ -241,6 +241,7 @@ LedCluster::LedCluster(const Texture& texture)
   addStrip(30,  7, 72);
 }
 
+
 void LedCluster::addStrip(int start, int end, int divisions) {
   for(int i = 0;i < divisions;i++) {
     glm::vec3 ballPosDelta = (vertexes[end] - vertexes[start])* (1.0f/divisions)*float(i) + vertexes[start];
