@@ -4,7 +4,7 @@
 #include <fstream>
 
 ScreenRender::ScreenRender(GLFWwindow* window) : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"), window(window) {
-  glfwGetWindowSize(window, &width, &height);
+  glfwGetFramebufferSize(window, &width, &height);
 }
 
 void ScreenRender::render(Camera& camera, std::vector<Model*>& models) {

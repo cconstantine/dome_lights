@@ -1,3 +1,5 @@
+#version 330 core
+
 // Lightning
 //
 // Modified by: Eivind Magnus Hvidevold
@@ -15,6 +17,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+out vec4 color_out;
 
 float random( vec2 p )
 {
@@ -103,6 +106,6 @@ void main( void )
     //finalColor *= pass(uv, 6.0);
   }
   
-  gl_FragColor = vec4( finalColor, 1.0 );
+  color_out = vec4( finalColor, 1.0 );
 
 }

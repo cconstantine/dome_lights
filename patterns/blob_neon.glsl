@@ -1,3 +1,5 @@
+#version 330 core
+
 // BlobNeon   By @paulofalcao - some blobs modifications with symmetries. 
 // Shrunk to fit in a page; paul's orig is nicer!
 // https://github.com/fxlex/ProcessingGLSL/blob/master/ProcessingGLSL/src/data/glslsandbox/blobneon.glsl
@@ -11,6 +13,9 @@ precision mediump float;
 #define PI 3.14159265
 uniform float time;
 uniform vec2 resolution;
+
+out vec4 color_out;
+
 
 vec3 sim(vec3 p,float s); //.h
 vec2 rot(vec2 p,float r);
@@ -62,5 +67,5 @@ void main( void ) {
        b=b+makePoint(x,y,0.7,2.7,0.4,0.4,t);
    float c=makePoint(x,y,3.7,0.3,0.3,0.3,t);
        c=c+makePoint(x,y,0.8,0.9,0.4,0.5,t);   
-  gl_FragColor = vec4(a/31.,b/31.,c/31.,1.0);
+  color_out = vec4(a/31.,b/31.,c/31.,1.0);
 }

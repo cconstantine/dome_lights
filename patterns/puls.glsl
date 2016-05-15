@@ -1,3 +1,5 @@
+#version 330 core
+
 // this is a remake of Puls, a famous 256b intro by Rrrola
 // see here for a video: http://www.youtube.com/watch?v=R35UuntQQF8
 //
@@ -27,6 +29,7 @@ uniform vec2 resolution;
 uniform float bin0;
 uniform float bin1;
 uniform float bin2;
+out vec4 color_out;
 
 #define FISH_EYE
 #define FAKE_AO
@@ -369,6 +372,6 @@ void main( void ) {
   color = color * max(1.0-f*.04,0.1);
   //color = color * fog(eye, p);
 
-  gl_FragColor = vec4( color, 1.0 );
+  color_out = vec4( color, 1.0 );
 
 }

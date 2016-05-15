@@ -139,7 +139,7 @@ int main( int argc, char** argv )
     double currentTime = glfwGetTime();
     nbFrames++;
     if ( currentTime - lastTime >= 1.0 ){
-       printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
+       //printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
        nbFrames = 0;
        lastTime = currentTime;
     }
