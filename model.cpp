@@ -42,12 +42,11 @@ Model::Model(const GLchar* path, const Texture& defaultTexture, const glm::vec2&
   this->loadModel(path);
 }
 
-void Model::addInstance(glm::vec3 posDelta, glm::vec2 texDelta) {
+void Model::addInstance(glm::vec3 posDelta, glm::vec2 texDelta, glm::vec3 projDelta) {
   for(GLuint i = 0; i < this->meshes.size(); i++) {
     meshes[i].instancePositionOffset.push_back(glm::translate(glm::mat4(), posDelta ));
     meshes[i].instanceTextureOffset.push_back( texDelta);
-    //meshes[i].instanceIndex.push_back(         float(meshes[i].instanceIndex.size()));
-    meshes[i].instanceProj.push_back(          glm::translate(glm::mat4(), posDelta ));
+    meshes[i].instanceProj.push_back(          glm::translate(glm::mat4(), projDelta ));
   }
 }
 

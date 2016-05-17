@@ -252,8 +252,8 @@ void LedCluster::addStrip(int start, int end, int divisions) {
     int y = count / 1000;
     glm::vec3 planePosDelta((float)x, (float)y, 0.0f);
 
-    balls.addInstance(ballPosDelta, texDelta);
-    plane.addInstance(planePosDelta, texDelta);
+    balls.addInstance(ballPosDelta, texDelta, ballPosDelta);
+    plane.addInstance(planePosDelta, texDelta, ballPosDelta);
   }
 }
 

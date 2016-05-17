@@ -120,11 +120,11 @@ int main( int argc, char** argv )
 
   // Load models
   Model screen("../models/screen.obj", texture);
-  screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0));
+  screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0), glm::vec3());
   toDraw.push_back(&screen);
 
   //Model panel("../models/panel.obj", fb_texture);
-  //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0));
+  //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0), glm::vec3());
   //toDraw.push_back(&panel);
 
   OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
