@@ -107,7 +107,7 @@ int main( int argc, char** argv )
   toDrawFb.push_back(&domeLeds.plane);
 
   std::vector<uint8_t> frameBuffer;
-  opc_client.resolve("stardome.local");
+  opc_client.resolve("localhost");
   int frameBytes =1000*10 * 3;
   frameBuffer.resize(sizeof(OPCClient::Header) + frameBytes);
 
@@ -140,9 +140,11 @@ int main( int argc, char** argv )
     double currentTime = glfwGetTime();
     nbFrames++;
     if ( currentTime - lastTime >= 1.0 ){
-       //printf("%2.4f ms/frame\n", 1000.0/double(nbFrames));
-       nbFrames = 0;
-       lastTime = currentTime;
+      if (nbFrames < 60) {
+        printf("%2.4f ms/frame\n", 1000.0/double(nbFrames)); 
+      }
+      nbFrames = 0;
+      lastTime = currentTime;
     }
 
     // Set frame time
