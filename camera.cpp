@@ -54,7 +54,7 @@ glm::mat4 IsoCamera::GetViewMatrix()
 }
 
 glm::mat4 IsoCamera::GetProjectionMatrix() {
-  return glm::perspective(Zoom, (float)800/(float)800, 0.01f, 1000.0f);
+  return glm::perspective(45.f, (float)800/(float)800, 0.01f, 1000.0f);
 }
 
 // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
@@ -96,10 +96,10 @@ void IsoCamera::ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean
 // Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 void IsoCamera::ProcessMouseScroll(GLfloat yoffset)
 {
-  if (this->Zoom >= 1.0f && this->Zoom <= 45.0f)
-    this->Zoom -= yoffset;
-  if (this->Zoom <= 1.0f)
-    this->Zoom = 1.0f;
+  if (this->Zoom >= 0.0f && this->Zoom <= 45.0f)
+    this->Zoom += yoffset;
+  if (this->Zoom <= 0.0f)
+    this->Zoom = 0.0f;
   if (this->Zoom >= 45.0f)
     this->Zoom = 45.0f;
 }

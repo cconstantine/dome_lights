@@ -13,7 +13,7 @@ class ScreenRender {
 public:
   ScreenRender(GLFWwindow* window);
 
-  void render(Camera& camera, std::vector<Model*>& models);
+  void render(IsoCamera& perspective, std::vector<Model*>& models);
 
 private:
   Shader shader;
@@ -25,9 +25,9 @@ private:
 class FrameBufferRender {
 
 public:
-  FrameBufferRender(int width, int heightFrameBufferRender);
+  FrameBufferRender(OrthoCamera& camera, int width, int heightFrameBufferRender);
 
-  void render(Camera& camera, std::vector<Model*>& models, unsigned char *dest);
+  void render(IsoCamera& perspective, std::vector<Model*>& models, unsigned char *dest);
 
   Texture getTexture();
 private:
@@ -39,6 +39,7 @@ private:
 
   GLuint pbos[2];
   GLuint active_pbo;
+  OrthoCamera camera;
 };
 
 class PatternRender {
