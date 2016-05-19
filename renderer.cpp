@@ -7,7 +7,7 @@ ScreenRender::ScreenRender(GLFWwindow* window) : shader("../shaders/model_loadin
   glfwGetFramebufferSize(window, &width, &height);
 }
 
-void ScreenRender::render(Camera& camera, std::vector<Model*>& models) {
+void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0,0,width,height);
 
@@ -16,9 +16,32 @@ void ScreenRender::render(Camera& camera, std::vector<Model*>& models) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   shader.Use(); 
+
+
+  GLint lightPosLoc        = glGetUniformLocation(shader.Program, "light.position");
+  GLint lightSpotdirLoc    = glGetUniformLocation(shader.Program, "light.direction");
+  GLint lightSpotCutOffLoc = glGetUniformLocation(shader.Program, "light.cutOff");        
+  GLint viewPosLoc         = glGetUniformLocation(shader.Program, "viewPos");
+  glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
+  glUniform3f(lightSpotdirLoc,    perspective.Front.x, perspective.Front.y, perspective.Front.z);
+  glUniform1f(lightSpotCutOffLoc, glm::cos(glm::radians(perspective.Zoom)));
+  glUniform3f(viewPosLoc,         perspective.Position.x, perspective.Position.y, perspective.Position.z);
+  // Set lights properties
+  glUniform3f(glGetUniformLocation(shader.Program, "light.ambient"),   0.1f, 0.1f, 0.1f);
+  // We set the diffuse intensity a bit higher; note that the right lighting conditions differ with each lighting method and environment.
+  // Each environment and lighting type requires some tweaking of these variables to get the best out of your environment.
+  glUniform3f(glGetUniformLocation(shader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
+  glUniform3f(glGetUniformLocation(shader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.constant"),  1.0f);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.linear"),    0.09);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.quadratic"), 0.032);
+  // Set material properties
+  glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 32.0f);
+
+
   // Transformation matrices
-  glm::mat4 projection = camera.GetProjectionMatrix();
-  glm::mat4 view = camera.GetViewMatrix();
+  glm::mat4 projection = perspective.GetProjectionMatrix();
+  glm::mat4 view = perspective.GetViewMatrix();
 
   glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
   glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -28,14 +51,17 @@ void ScreenRender::render(Camera& camera, std::vector<Model*>& models) {
     m->Draw(shader);
   }
 }
-FrameBufferRender::FrameBufferRender(int width, int height)
+FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height)
  : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"),
+   camera(camera),
    width(width),
    height(height)
 {
   // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
   glGenFramebuffers(1, &FramebufferName);
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+
 
   // The texture we're going to render to
   glGenTextures(1, &renderedTexture);
@@ -70,7 +96,7 @@ FrameBufferRender::FrameBufferRender(int width, int height)
   active_pbo = 0;
 }
 
-void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsigned char* imageBuffer) {
+void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& models, unsigned char* imageBuffer) {
 
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
   glViewport(0,0,width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
@@ -80,6 +106,26 @@ void FrameBufferRender::render(Camera& camera, std::vector<Model*>& models, unsi
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   shader.Use();
+  
+  GLint lightPosLoc        = glGetUniformLocation(shader.Program, "light.position");
+  GLint lightSpotdirLoc    = glGetUniformLocation(shader.Program, "light.direction");
+  GLint lightSpotCutOffLoc = glGetUniformLocation(shader.Program, "light.cutOff");        
+  GLint viewPosLoc         = glGetUniformLocation(shader.Program, "viewPos");
+  glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
+  glUniform3f(lightSpotdirLoc,    perspective.Front.x, perspective.Front.y, perspective.Front.z);
+  glUniform1f(lightSpotCutOffLoc, glm::cos(glm::radians(perspective.Zoom)));
+  glUniform3f(viewPosLoc,         perspective.Position.x, perspective.Position.y, perspective.Position.z);
+  // Set lights properties
+  glUniform3f(glGetUniformLocation(shader.Program, "light.ambient"),   0.1f, 0.1f, 0.1f);
+  // We set the diffuse intensity a bit higher; note that the right lighting conditions differ with each lighting method and environment.
+  // Each environment and lighting type requires some tweaking of these variables to get the best out of your environment.
+  glUniform3f(glGetUniformLocation(shader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
+  glUniform3f(glGetUniformLocation(shader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.constant"),  1.0f);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.linear"),    0.09);
+  glUniform1f(glGetUniformLocation(shader.Program, "light.quadratic"), 0.032);
+  // Set material properties
+  glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 32.0f);
 
   // Transformation matrices
   glm::mat4 projection = camera.GetProjectionMatrix();

@@ -105,6 +105,7 @@ int main( int argc, char** argv )
   LedCluster domeLeds(texture);
   toDraw.push_back(&domeLeds.balls);
   toDrawFb.push_back(&domeLeds.plane);
+  //toDraw.push_back(&domeLeds.plane);
 
   std::vector<uint8_t> frameBuffer;
   opc_client.resolve("stardome.local");
@@ -114,7 +115,8 @@ int main( int argc, char** argv )
   OPCClient::Header::view(frameBuffer).init(0, opc_client.SET_PIXEL_COLORS, frameBytes);
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
-  FrameBufferRender fb_screen(1000, 10);
+  OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
+  FrameBufferRender fb_screen(stripCamera, 1000, 10);
 
   Texture fb_texture = fb_screen.getTexture();
 
@@ -127,7 +129,6 @@ int main( int argc, char** argv )
   //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0), glm::vec3());
   //toDraw.push_back(&panel);
 
-  OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
   ScreenRender scene(window);
 
 
@@ -152,7 +153,7 @@ int main( int argc, char** argv )
 
     pattern_render.render(pattern);
 
-    fb_screen.render(stripCamera, toDrawFb, OPCClient::Header::view(frameBuffer).data());
+    fb_screen.render(camera, toDrawFb, OPCClient::Header::view(frameBuffer).data());
     
     opc_client.write(frameBuffer);
     scene.render(camera, toDraw);

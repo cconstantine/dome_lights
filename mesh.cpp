@@ -44,7 +44,7 @@ void Mesh::Draw(Shader shader)
     glUniform1i(glGetUniformLocation(shader.Program,  ss.str().c_str()), i);
     glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
   }
-  
+
   // Draw mesh
   glBindVertexArray(this->VAO);
   glBindBuffer(GL_ARRAY_BUFFER, this->POS);
@@ -54,7 +54,7 @@ void Mesh::Draw(Shader shader)
   glBufferData(GL_ARRAY_BUFFER, instanceTextureOffset.size() * sizeof(glm::vec2), &instanceTextureOffset[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, this->PROJ);
-  glBufferData(GL_ARRAY_BUFFER, instanceProj.size() * sizeof(glm::vec3), &instanceProj[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, instanceProj.size() * sizeof(glm::mat4), &instanceProj[0], GL_STATIC_DRAW);
 
   glDrawElementsInstanced(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0, instanceTextureOffset.size());
   glBindVertexArray(0);
@@ -104,29 +104,40 @@ void Mesh::setupMesh()
   glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (GLvoid*)0);
   glVertexAttribDivisor(3, 1);
 
+  GLsizei vec4Size = sizeof(glm::vec4);
+
   glBindBuffer(GL_ARRAY_BUFFER, this->PROJ);
   glEnableVertexAttribArray(4); 
-  glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
+  glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)0);
   glVertexAttribDivisor(4, 1);
+  glEnableVertexAttribArray(5); 
+  glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(1l * vec4Size));
+  glVertexAttribDivisor(5, 1);
+  glEnableVertexAttribArray(6); 
+  glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(2l * vec4Size));
+  glVertexAttribDivisor(6, 1);
+  glEnableVertexAttribArray(7); 
+  glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3l * vec4Size));
+  glVertexAttribDivisor(7, 1);
+  
   
   // Instance position offsets
   glBindBuffer(GL_ARRAY_BUFFER, this->POS);
-  GLsizei vec4Size = sizeof(glm::vec4);
-  glEnableVertexAttribArray(5); 
-  glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)0);
-  glVertexAttribDivisor(5, 1);
-
-  glEnableVertexAttribArray(6); 
-  glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(1l * vec4Size));
-  glVertexAttribDivisor(6, 1);
-
-  glEnableVertexAttribArray(7); 
-  glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(2l * vec4Size));
-  glVertexAttribDivisor(7, 1);
-
   glEnableVertexAttribArray(8); 
-  glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3l * vec4Size));
+  glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)0);
   glVertexAttribDivisor(8, 1);
+
+  glEnableVertexAttribArray(9); 
+  glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(1l * vec4Size));
+  glVertexAttribDivisor(9, 1);
+
+  glEnableVertexAttribArray(10); 
+  glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(2l * vec4Size));
+  glVertexAttribDivisor(10, 1);
+
+  glEnableVertexAttribArray(11); 
+  glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3l * vec4Size));
+  glVertexAttribDivisor(11, 1);
 
 
   // Instance projection offset
