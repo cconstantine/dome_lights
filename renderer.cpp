@@ -3,7 +3,33 @@
 #include <glm/gtx/string_cast.hpp>
 #include <fstream>
 
-ScreenRender::ScreenRender(GLFWwindow* window) : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"), window(window) {
+SceneRender::SceneRender() 
+ : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag")
+ {}
+
+void SceneRender::setupLights(IsoCamera& perspective) {
+  {
+    GLint lightPosLoc        = glGetUniformLocation(shader.Program, "spot_light.position");
+    GLint lightSpotdirLoc    = glGetUniformLocation(shader.Program, "spot_light.direction");
+    GLint lightSpotCutOffLoc = glGetUniformLocation(shader.Program, "spot_light.cutOff");
+    glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
+    glUniform3f(lightSpotdirLoc,    perspective.Front.x, perspective.Front.y, perspective.Front.z);
+    glUniform1f(lightSpotCutOffLoc, glm::cos(glm::radians(perspective.Zoom)));
+    glUniform1f(glGetUniformLocation(shader.Program, "spot_light.constant"),  1.0f);
+    glUniform1f(glGetUniformLocation(shader.Program, "spot_light.linear"),    0.19);
+    glUniform1f(glGetUniformLocation(shader.Program, "spot_light.quadratic"), 0.032);
+  }  {
+    GLint lightPosLoc        = glGetUniformLocation(shader.Program, "point_light.position");
+    GLint lightSpotColor     = glGetUniformLocation(shader.Program, "point_light.color");
+    glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
+    glUniform3f(lightSpotColor,     0.2f, 0.4f, 0.5f);
+    glUniform1f(glGetUniformLocation(shader.Program, "point_light.constant"),  1.0f);
+    glUniform1f(glGetUniformLocation(shader.Program, "point_light.linear"),    0.009);
+    glUniform1f(glGetUniformLocation(shader.Program, "point_light.quadratic"), 0.232);
+  }
+}
+
+ScreenRender::ScreenRender(GLFWwindow* window) : window(window) {
   glfwGetFramebufferSize(window, &width, &height);
 }
 
@@ -17,27 +43,7 @@ void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
 
   shader.Use(); 
 
-
-  GLint lightPosLoc        = glGetUniformLocation(shader.Program, "light.position");
-  GLint lightSpotdirLoc    = glGetUniformLocation(shader.Program, "light.direction");
-  GLint lightSpotCutOffLoc = glGetUniformLocation(shader.Program, "light.cutOff");        
-  GLint viewPosLoc         = glGetUniformLocation(shader.Program, "viewPos");
-  glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
-  glUniform3f(lightSpotdirLoc,    perspective.Front.x, perspective.Front.y, perspective.Front.z);
-  glUniform1f(lightSpotCutOffLoc, glm::cos(glm::radians(perspective.Zoom)));
-  glUniform3f(viewPosLoc,         perspective.Position.x, perspective.Position.y, perspective.Position.z);
-  // Set lights properties
-  glUniform3f(glGetUniformLocation(shader.Program, "light.ambient"),   0.1f, 0.1f, 0.1f);
-  // We set the diffuse intensity a bit higher; note that the right lighting conditions differ with each lighting method and environment.
-  // Each environment and lighting type requires some tweaking of these variables to get the best out of your environment.
-  glUniform3f(glGetUniformLocation(shader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
-  glUniform3f(glGetUniformLocation(shader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.constant"),  1.0f);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.linear"),    0.09);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.quadratic"), 0.032);
-  // Set material properties
-  glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 32.0f);
-
+  setupLights(perspective);
 
   // Transformation matrices
   glm::mat4 projection = perspective.GetProjectionMatrix();
@@ -51,11 +57,11 @@ void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
     m->Draw(shader);
   }
 }
-FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height)
- : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag"),
+FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height, uint8_t * dest) :
    camera(camera),
    width(width),
-   height(height)
+   height(height),
+   dest(dest)
 {
   // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
   glGenFramebuffers(1, &FramebufferName);
@@ -89,17 +95,17 @@ FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height)
 
   glGenBuffers(2, pbos);
   glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[0]);
-  glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
+  glBufferData(GL_PIXEL_PACK_BUFFER, 3*width*height, 0, GL_STREAM_READ);
   glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[1]);
-  glBufferData(GL_PIXEL_PACK_BUFFER, 3*1000*10, 0, GL_STREAM_READ);
+  glBufferData(GL_PIXEL_PACK_BUFFER, 3*width*height, 0, GL_STREAM_READ);
 
   active_pbo = 0;
 }
 
-void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& models, unsigned char* imageBuffer) {
+void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
 
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-  glViewport(0,0,width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+  glViewport(0,0,width, height);
 
   // Clear the colorbuffer
   glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
@@ -107,25 +113,7 @@ void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& mode
 
   shader.Use();
   
-  GLint lightPosLoc        = glGetUniformLocation(shader.Program, "light.position");
-  GLint lightSpotdirLoc    = glGetUniformLocation(shader.Program, "light.direction");
-  GLint lightSpotCutOffLoc = glGetUniformLocation(shader.Program, "light.cutOff");        
-  GLint viewPosLoc         = glGetUniformLocation(shader.Program, "viewPos");
-  glUniform3f(lightPosLoc,        perspective.Position.x, perspective.Position.y, perspective.Position.z);
-  glUniform3f(lightSpotdirLoc,    perspective.Front.x, perspective.Front.y, perspective.Front.z);
-  glUniform1f(lightSpotCutOffLoc, glm::cos(glm::radians(perspective.Zoom)));
-  glUniform3f(viewPosLoc,         perspective.Position.x, perspective.Position.y, perspective.Position.z);
-  // Set lights properties
-  glUniform3f(glGetUniformLocation(shader.Program, "light.ambient"),   0.1f, 0.1f, 0.1f);
-  // We set the diffuse intensity a bit higher; note that the right lighting conditions differ with each lighting method and environment.
-  // Each environment and lighting type requires some tweaking of these variables to get the best out of your environment.
-  glUniform3f(glGetUniformLocation(shader.Program, "light.diffuse"),   0.8f, 0.8f, 0.8f);
-  glUniform3f(glGetUniformLocation(shader.Program, "light.specular"),  1.0f, 1.0f, 1.0f);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.constant"),  1.0f);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.linear"),    0.09);
-  glUniform1f(glGetUniformLocation(shader.Program, "light.quadratic"), 0.032);
-  // Set material properties
-  glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 32.0f);
+  setupLights(perspective);
 
   // Transformation matrices
   glm::mat4 projection = camera.GetProjectionMatrix();
@@ -138,11 +126,6 @@ void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& mode
     m->Draw(shader);
   }
 
-  // glBindTexture(GL_TEXTURE_2D, renderedTexture);
-  // glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  // glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, imageBuffer);
-
-
   glBindBuffer(GL_PIXEL_PACK_BUFFER, pbos[active_pbo]);
   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, 0);
   active_pbo = (active_pbo + 1) % 2;
@@ -151,19 +134,9 @@ void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& mode
   GLubyte* src = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
   if(src)
   {
-    memcpy(imageBuffer, src, 3*1000*10);
+    memcpy(dest, src, 3*width*height);
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
   }
-  // unsigned char xa= width % 256;
-  // unsigned char xb= (width-xa)/256;
-  // unsigned char ya= height % 256;
-  // unsigned char yb= (height-ya)/256;//assemble the header
-  // unsigned char header[18]={0,0,2,0,0,0,0,0,0,0,0,0,xa,xb,ya,yb,24,0};
-  // // write header and data to file
-  // std::fstream file("test.tga", std::ios::out | std::ios::binary);
-  // file.write (reinterpret_cast<char *>(header), sizeof(header));
-  // file.write (reinterpret_cast<char *>(imageBuffer), 3*width*height);
-  // file.close();
 }
 
 Texture FrameBufferRender::getTexture() {
@@ -172,7 +145,6 @@ Texture FrameBufferRender::getTexture() {
   t.target = GL_TEXTURE_2D;
   return t;
 }
-
 
 PatternRender::PatternRender(int width, int height) : width(width), height(height) {
   glGenVertexArrays(1, &VertexArrayID);

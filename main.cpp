@@ -108,7 +108,7 @@ int main( int argc, char** argv )
   //toDraw.push_back(&domeLeds.plane);
 
   std::vector<uint8_t> frameBuffer;
-  opc_client.resolve("localhost");
+  opc_client.resolve("stardome.local");
   int frameBytes =1000*10 * 3;
   frameBuffer.resize(sizeof(OPCClient::Header) + frameBytes);
 
@@ -116,7 +116,7 @@ int main( int argc, char** argv )
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
   OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
-  FrameBufferRender fb_screen(stripCamera, 1000, 10);
+  FrameBufferRender fb_screen(stripCamera, 1000, 10, OPCClient::Header::view(frameBuffer).data());
 
   Texture fb_texture = fb_screen.getTexture();
 
@@ -155,7 +155,7 @@ int main( int argc, char** argv )
 
     pattern_render.render(pattern);
 
-    fb_screen.render(camera, toDrawFb, OPCClient::Header::view(frameBuffer).data());
+    fb_screen.render(camera, toDrawFb);
     
     opc_client.write(frameBuffer);
     scene.render(camera, toDraw);

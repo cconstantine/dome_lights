@@ -8,7 +8,14 @@
 #include <model.hpp>
 #include <camera.hpp>
 
-class ScreenRender {
+class SceneRender {
+protected:
+  SceneRender();
+  Shader shader;
+  void setupLights(IsoCamera& perspective);
+};
+
+class ScreenRender : public SceneRender {
 
 public:
   ScreenRender(GLFWwindow* window);
@@ -16,23 +23,22 @@ public:
   void render(IsoCamera& perspective, std::vector<Model*>& models);
 
 private:
-  Shader shader;
 
   GLFWwindow* window;
   int width, height;
 };
 
-class FrameBufferRender {
+class FrameBufferRender : public SceneRender {
 
 public:
-  FrameBufferRender(OrthoCamera& camera, int width, int heightFrameBufferRender);
+  FrameBufferRender(OrthoCamera& camera, int width, int height, uint8_t * dest);
 
-  void render(IsoCamera& perspective, std::vector<Model*>& models, unsigned char *dest);
+  void render(IsoCamera& perspective, std::vector<Model*>& models);
 
   Texture getTexture();
-private:
-  Shader shader;
 
+private:
+  unsigned char *dest;
   GLuint FramebufferName;
   GLuint renderedTexture;
   int width, height;
