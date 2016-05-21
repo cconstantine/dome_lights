@@ -125,6 +125,7 @@ int main( int argc, char** argv )
   screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0), glm::vec3());
   toDraw.push_back(&screen);
 
+  Model dome("../models/dome.obj");
   //Model panel("../models/panel.obj", fb_texture);
   //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0), glm::vec3());
   //toDraw.push_back(&panel);

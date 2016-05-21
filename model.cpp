@@ -66,10 +66,10 @@ void Model::Draw(Shader shader)
 // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string path)
 {
-  //fprintf(stderr, "Loading model at: %s\n", path.c_str());
+  fprintf(stderr, "Loading model at: %s\n", path.c_str());
   // Read file via ASSIMP
   Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+  const aiScene* scene = importer.ReadFile(path, 0);
   // Check for errors
   if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
   {
@@ -108,7 +108,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     vector<Vertex> vertices;
     vector<GLuint> indices;
     vector<Texture> textures;
-
+    fprintf(stderr, "verticies: %d\n", mesh->mNumVertices);
     // Walk through each of the mesh's vertices
     for(GLuint i = 0; i < mesh->mNumVertices; i++)
     {
