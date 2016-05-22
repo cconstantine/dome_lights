@@ -18,6 +18,5 @@ public:
   Model plane;
 
 private:
-  vector<glm::vec3> vertexes;
-  vector<glm::vec2> vtertexes;
+  const aiScene* model;
 };

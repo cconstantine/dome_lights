@@ -69,7 +69,7 @@ void Model::loadModel(string path)
   fprintf(stderr, "Loading model at: %s\n", path.c_str());
   // Read file via ASSIMP
   Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(path, 0);
+  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
   // Check for errors
   if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
   {
@@ -86,6 +86,7 @@ void Model::loadModel(string path)
 // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
 void Model::processNode(aiNode* node, const aiScene* scene)
 {
+  fprintf(stderr, "meshes: %d\n", node->mNumMeshes);
     // Process each mesh located at the current node
     for(GLuint i = 0; i < node->mNumMeshes; i++)
     {
@@ -120,11 +121,13 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         vector.z = mesh->mVertices[i].z;
         vertex.Position = vector;
 
-        // Normals
-        vector.x = mesh->mNormals[i].x;
-        vector.y = mesh->mNormals[i].y;
-        vector.z = mesh->mNormals[i].z;
-        vertex.Normal = vector;
+        if (mesh->HasNormals()) {
+          // Normals
+          vector.x = mesh->mNormals[i].x;
+          vector.y = mesh->mNormals[i].y;
+          vector.z = mesh->mNormals[i].z;
+          vertex.Normal = vector;
+        }
         // Texture Coordinates
         if(mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
         {
