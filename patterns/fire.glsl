@@ -1,3 +1,5 @@
+#version 330 core
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -7,6 +9,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+out vec4 color_out;
 
 float snoise(vec3 uv, float res)
 {
@@ -48,6 +51,6 @@ void main( void ) {
 		color += (1.5 / power) * snoise(coord + vec3(0.,-time*.05, time*.01), power*16.);
 	}
 	
-	gl_FragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , 1.0);
+	color_out = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),3.)*0.15 , 1.0);
 	
 }

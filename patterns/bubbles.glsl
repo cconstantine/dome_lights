@@ -1,3 +1,5 @@
+#version 330 core
+
 // Colorful Voronoi
 // By: Brandon Fogerty
 // bfogerty at gmail dot com
@@ -10,6 +12,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+out vec4 color_out;
 
 vec2 hash(vec2 p)
 {
@@ -51,5 +54,5 @@ void main( void )
     if (r < 3.7) { r = 0.0; }
     vec3 finalColor = vec3(10.0 * uv.y, 2.0, 1.0 * r) * t;
     
-    gl_FragColor = vec4(finalColor, 1.0 );
+    color_out = vec4(finalColor, 1.0 );
 }

@@ -1,3 +1,5 @@
+#version 330 core
+
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -5,8 +7,9 @@ precision highp float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
-varying vec2 surfacePosition;
-varying vec2 surfaceSize;
+in vec2 surfacePosition;
+in vec2 surfaceSize;
+out vec4 color_out;
 
 vec3   iResolution = vec3(resolution, 1.0);
 float  iGlobalTime = time;
@@ -375,5 +378,5 @@ void main(void)
    
     col = pow(col, vec3(1.0, 0.9, 0.6) * 1.4) * 1.1;
     col = pow(col, vec3(1.0 / 2.2));
-  gl_FragColor = vec4(col, 1.0);
+  color_out = vec4(col, 1.0);
 }

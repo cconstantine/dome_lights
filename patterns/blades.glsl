@@ -1,3 +1,5 @@
+#version 330 core
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -7,6 +9,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+out vec4 color_out;
 
 #define PI 3.141592653589793
 #define TWOPI 6.283185307179586
@@ -62,5 +65,5 @@ void main(void) {
 	
 	color *= step(vec4(.5), color);
 
-  gl_FragColor = color;
+  color_out = color;
 }

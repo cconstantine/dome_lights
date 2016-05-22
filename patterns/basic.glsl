@@ -1,6 +1,9 @@
+#version 330 core
+
 // From http://mrdoob.com/lab/javascript/webgl/glsl/03/
 uniform float time;
 uniform vec2 resolution;
+out vec4 color_out;
 
 void main( void ) {
 
@@ -12,6 +15,6 @@ void main( void ) {
     color += sin( position.x * sin( time / 5.0 ) * 10.0 ) + sin( position.y * sin( time / 35.0 ) * 80.0 );
     color *= sin( time / 10.0 ) * 0.5;
 
-    gl_FragColor = vec4( vec3( color, color * 0.9, sin( color + time / 3.0 ) * 0.75 ), 1.0 );
+    color_out = vec4( vec3( color, color * 0.9, sin( color + time / 3.0 ) * 0.75 ), 1.0 );
 
 }

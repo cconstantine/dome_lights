@@ -1,3 +1,5 @@
+#version 330 core
+
 // Fireball
 // Awd
 // @AlexWDunn
@@ -12,6 +14,7 @@ uniform vec2 resolution;
 uniform float time;
 uniform vec2 mouse;
 uniform float zoom;
+out vec4 color_out;
 
 #define saturate(oo) clamp(oo, 0.0, 1.0)
 
@@ -222,5 +225,5 @@ void main(void)
 		col = March(origin, rd);
 	}
 	
-	gl_FragColor = col;
+	color_out = col;
 }

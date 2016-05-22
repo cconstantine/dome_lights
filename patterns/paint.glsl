@@ -1,3 +1,5 @@
+#version 330 core
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -7,6 +9,7 @@ precision mediump float;
 uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
+out vec4 color_out;
 
 
 vec2 R = resolution;
@@ -32,5 +35,5 @@ void main( void ) {
     c.rgb=lungth(sin(x*sqrt(vec2(11.1,1.1))),c.rgb/3.1);
     c=.4+.4*sin(c*8.);
     c.a=1.;
-    gl_FragColor = c;
+    color_out = c;
 }
