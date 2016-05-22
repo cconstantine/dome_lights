@@ -28,16 +28,13 @@ const GLfloat ZOOM       =  0.0f;
 class Camera {
 public:
   virtual glm::mat4 GetViewMatrix() = 0;
-  virtual glm::mat4 GetProjectionMatrix() = 0;
+  virtual glm::mat4 GetProjectionMatrix(int width, int height) = 0;
 };
 
 class OrthoCamera : public Camera {
 public:
-  OrthoCamera( int left, int right, int bottom, int top );
   virtual glm::mat4 GetViewMatrix();
-  virtual glm::mat4 GetProjectionMatrix();
-private:
-  float left, right, bottom, top;
+  virtual glm::mat4 GetProjectionMatrix(int width, int height);
 };
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
@@ -66,7 +63,7 @@ public:
 
   // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
   virtual glm::mat4 GetViewMatrix();
-  virtual glm::mat4 GetProjectionMatrix();
+  virtual glm::mat4 GetProjectionMatrix(int width, int height);
 
   // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
   void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime);

@@ -30,11 +30,12 @@ void SceneRender::setupLights(IsoCamera& perspective) {
 }
 
 ScreenRender::ScreenRender(GLFWwindow* window) : window(window) {
-  glfwGetFramebufferSize(window, &width, &height);
 }
 
 void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glfwGetFramebufferSize(window, &width, &height);
+
   glViewport(0,0,width,height);
 
   // Clear the colorbuffer
@@ -46,7 +47,7 @@ void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
   setupLights(perspective);
 
   // Transformation matrices
-  glm::mat4 projection = perspective.GetProjectionMatrix();
+  glm::mat4 projection = perspective.GetProjectionMatrix(width, height);
   glm::mat4 view = perspective.GetViewMatrix();
 
   glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -116,7 +117,7 @@ void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& mode
   setupLights(perspective);
 
   // Transformation matrices
-  glm::mat4 projection = camera.GetProjectionMatrix();
+  glm::mat4 projection = camera.GetProjectionMatrix(width, height);
   glm::mat4 view = camera.GetViewMatrix();
   glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
   glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));

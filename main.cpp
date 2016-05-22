@@ -33,6 +33,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 // Camera
 IsoCamera camera(glm::vec3(0.0f, 1.0f, 2.8f));
@@ -78,11 +79,12 @@ int main( int argc, char** argv )
   glfwSetKeyCallback(window, key_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
+  glfwSetMouseButtonCallback(window, mouse_button_callback);
 
   // Ensure we can capture the escape key being pressed below
-  //glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+  glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
   // Options
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // Initialize GLEW
   glewExperimental = GL_TRUE; // Needed for core profile
@@ -115,7 +117,7 @@ int main( int argc, char** argv )
   OPCClient::Header::view(frameBuffer).init(0, opc_client.SET_PIXEL_COLORS, frameBytes);
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
-  OrthoCamera stripCamera(0.0f, 1000.0f, 0.0f, 10.0f);
+  OrthoCamera stripCamera;
   FrameBufferRender fb_screen(stripCamera, 1000, 10, OPCClient::Header::view(frameBuffer).data());
 
   Texture fb_texture = fb_screen.getTexture();
@@ -205,22 +207,35 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if(firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    GLfloat xoffset = xpos - lastX;
-    GLfloat yoffset = lastY - ypos; 
-    
+  int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+  if (state != GLFW_PRESS) {
+    firstMouse = true;
+    return;
+  }
+  if(firstMouse)
+  {
     lastX = xpos;
     lastY = ypos;
+    firstMouse = false;
+  }
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+  GLfloat xoffset = xpos - lastX;
+  GLfloat yoffset = lastY - ypos; 
+
+  lastX = xpos;
+  lastY = ypos;
+
+  camera.ProcessMouseMovement(xoffset, yoffset);
 } 
 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+  if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  }
+}
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
