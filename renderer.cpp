@@ -3,8 +3,126 @@
 #include <glm/gtx/string_cast.hpp>
 #include <fstream>
 
-SceneRender::SceneRender() 
- : shader("../shaders/model_loading.vs", "../shaders/model_loading.frag")
+
+// Include GLEW
+#include <GL/glew.h>
+
+// Include GLFW
+#include <glfw3.h>
+#pragma region "User input"
+
+bool keys[1024];
+
+
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+      glfwSetWindowShouldClose(window, GL_TRUE);
+
+  if(action == GLFW_PRESS)
+      keys[key] = true;
+  else if(action == GLFW_RELEASE)
+      keys[key] = false;  
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+  int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
+  static GLfloat lastX = 400, lastY = 300;
+  static bool firstMouse = true;
+
+  Scene* scene = (Scene*)glfwGetWindowUserPointer(window);
+
+  if (state != GLFW_PRESS) {
+    firstMouse = true;
+    return;
+  }
+  if(firstMouse)
+  {
+    lastX = xpos;
+    lastY = ypos;
+    firstMouse = false;
+  }
+
+  GLfloat xoffset = xpos - lastX;
+  GLfloat yoffset = lastY - ypos; 
+
+  lastX = xpos;
+  lastY = ypos;
+
+  scene->perspective.ProcessMouseMovement(xoffset, yoffset);
+} 
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+
+  if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  }
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  
+  Scene* scene = (Scene*)glfwGetWindowUserPointer(window);
+  scene->perspective.ProcessMouseScroll(yoffset);
+}
+
+#pragma endregion
+
+
+Scene::Scene(ScreenRender* screen, FrameBufferRender* fb_render) :
+  perspective(glm::vec3(0.0f, 1.0f, 2.8f)), screen(screen), fb_render(fb_render),
+  deltaTime(0.0f), lastFrame(0.0f), lastTime(glfwGetTime()), nbFrames(0)
+{
+  glfwSetWindowUserPointer(screen->window, this);
+
+  // Set the required callback functions
+  glfwSetKeyCallback(screen->window, key_callback);
+  glfwSetCursorPosCallback(screen->window, mouse_callback);
+  glfwSetScrollCallback(screen->window, scroll_callback);
+  glfwSetMouseButtonCallback(screen->window, mouse_button_callback);
+
+}
+
+void Scene::render() {
+    // Measure speed
+  double currentTime = glfwGetTime();
+  nbFrames++;
+  if ( currentTime - lastTime >= 1.0 ){
+    if (nbFrames < 60) {
+      printf("%2.4f ms/frame\n", 1000.0/double(nbFrames)); 
+    }
+    nbFrames = 0;
+    lastTime = currentTime;
+  }
+  Do_Movement();
+  // Set frame time
+  GLfloat currentFrame = glfwGetTime();
+  deltaTime = currentFrame - lastFrame;
+  lastFrame = currentFrame;
+  screen->render(perspective);
+  fb_render->render(perspective);
+}
+
+void Scene::Do_Movement()
+{
+    // Camera controls
+    if(keys[GLFW_KEY_W])
+        perspective.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        perspective.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        perspective.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_D])
+        perspective.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+SceneRender::SceneRender() :
+ shader("../shaders/model_loading.vs", "../shaders/model_loading.frag")
  {}
 
 void SceneRender::setupLights(IsoCamera& perspective) {
@@ -29,10 +147,14 @@ void SceneRender::setupLights(IsoCamera& perspective) {
   }
 }
 
-ScreenRender::ScreenRender(GLFWwindow* window) : window(window) {
+ScreenRender::ScreenRender(GLFWwindow* window) :
+ window(window)
+{
+  glfwGetFramebufferSize(window, &width, &height);
+
 }
 
-void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
+void ScreenRender::render(IsoCamera& perspective) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glfwGetFramebufferSize(window, &width, &height);
 
@@ -58,8 +180,8 @@ void ScreenRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
     m->Draw(shader);
   }
 }
-FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height, uint8_t * dest) :
-   camera(camera),
+
+FrameBufferRender::FrameBufferRender(int width, int height, uint8_t * dest) :
    width(width),
    height(height),
    dest(dest)
@@ -67,8 +189,6 @@ FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height,
   // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
   glGenFramebuffers(1, &FramebufferName);
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-
-
 
   // The texture we're going to render to
   glGenTextures(1, &renderedTexture);
@@ -103,7 +223,7 @@ FrameBufferRender::FrameBufferRender(OrthoCamera& camera, int width, int height,
   active_pbo = 0;
 }
 
-void FrameBufferRender::render(IsoCamera& perspective, std::vector<Model*>& models) {
+void FrameBufferRender::render(IsoCamera& perspective) {
 
   glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
   glViewport(0,0,width, height);

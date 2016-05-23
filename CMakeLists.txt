@@ -1,9 +1,7 @@
 # Set the name and the supported language of the project
-project(candy_pusher)
+project(dome_lights)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
-
-#find_package(OpenGL REQUIRED)
 
 # Find all the libs that don't require extra parameters
 foreach(lib OpenGL )

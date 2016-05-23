@@ -28,25 +28,6 @@ const int canvasSize = 400;
 
 #include <opc_client.h>
 
-// Function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void Do_Movement();
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-
-// Camera
-IsoCamera camera(glm::vec3(0.0f, 1.0f, 2.8f));
-
-bool keys[1024];
-GLfloat lastX = 400, lastY = 300;
-bool firstMouse = true;
-
-GLfloat deltaTime = 0.0f;
-GLfloat lastFrame = 0.0f;
-
-std::vector<Model*> toDraw;
-std::vector<Model*> toDrawFb;
 OPCClient opc_client;
 
 int main( int argc, char** argv )
@@ -75,11 +56,6 @@ int main( int argc, char** argv )
 	}
 	glfwMakeContextCurrent(window);
 
-  // Set the required callback functions
-  glfwSetKeyCallback(window, key_callback);
-  glfwSetCursorPosCallback(window, mouse_callback);
-  glfwSetScrollCallback(window, scroll_callback);
-  glfwSetMouseButtonCallback(window, mouse_button_callback);
 
   // Ensure we can capture the escape key being pressed below
   glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
@@ -98,17 +74,6 @@ int main( int argc, char** argv )
   // Setup some OpenGL options
   glEnable(GL_DEPTH_TEST);
 
-
-  Shader pattern("../shaders/pattern.frag", argv[1]);
-
-  PatternRender pattern_render(canvasSize, canvasSize);
-  Texture texture = pattern_render.getTexture();
-
-  LedCluster domeLeds(texture);
-  toDraw.push_back(&domeLeds.balls);
-  toDrawFb.push_back(&domeLeds.plane);
-  //toDraw.push_back(&domeLeds.plane);
-
   std::vector<uint8_t> frameBuffer;
   opc_client.resolve("stardome.local");
   int frameBytes =1000*10 * 3;
@@ -117,54 +82,47 @@ int main( int argc, char** argv )
   OPCClient::Header::view(frameBuffer).init(0, opc_client.SET_PIXEL_COLORS, frameBytes);
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
-  OrthoCamera stripCamera;
-  FrameBufferRender fb_screen(stripCamera, 1000, 10, OPCClient::Header::view(frameBuffer).data());
+  FrameBufferRender fb_screen(1000, 10, OPCClient::Header::view(frameBuffer).data());
+  ScreenRender screen_renderer(window);
+  Scene scene(&screen_renderer, &fb_screen);
+  
+  Shader pattern("../shaders/pattern.frag", argv[1]);
+
+  PatternRender pattern_render(canvasSize, canvasSize);
+  Texture texture = pattern_render.getTexture();
+
+  LedCluster domeLeds(texture);
+  screen_renderer.models.push_back(&domeLeds.balls);
+  fb_screen.models.push_back(&domeLeds.plane);
+  //screen_renderer.models.push_back(&domeLeds.plane);
+
 
   Texture fb_texture = fb_screen.getTexture();
 
   // Load models
   Model screen("../models/screen.obj", texture);
   screen.addInstance(glm::vec3(), glm::vec2(1.0, 1.0), glm::vec3());
-  toDraw.push_back(&screen);
+  screen_renderer.models.push_back(&screen);
 
   //Model panel("../models/panel.obj", fb_texture);
   //panel.addInstance(glm::vec3(), glm::vec2(0.0, 0.0), glm::vec3());
-  //toDraw.push_back(&panel);
-
-  ScreenRender scene(window);
+  //screen_renderer.models.push_back(&panel);
 
 
-  double lastTime = glfwGetTime(); int nbFrames = 0;
+
   while(!glfwWindowShouldClose(window)) {
     glfwPollEvents();
-    Do_Movement();
 
-    // Measure speed
-    double currentTime = glfwGetTime();
-    nbFrames++;
-    if ( currentTime - lastTime >= 1.0 ){
-      if (nbFrames < 60) {
-        printf("%2.4f ms/frame\n", 1000.0/double(nbFrames)); 
-      }
-      nbFrames = 0;
-      lastTime = currentTime;
-    }
-
-    // Set frame time
-    GLfloat currentFrame = glfwGetTime();
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-
+    // Render the pattern
     pattern_render.render(pattern);
 
-    fb_screen.render(camera, toDrawFb);
+    // Render the scene
+    scene.render();
     
     opc_client.write(frameBuffer);
-    scene.render(camera, toDraw);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
-    //sleep(1);
 	}
 
   memset(OPCClient::Header::view(frameBuffer).data(), 0, frameBytes);
@@ -177,68 +135,3 @@ int main( int argc, char** argv )
 }
 
 
-#pragma region "User input"
-
-// Moves/alters the camera positions based on user input
-void Do_Movement()
-{
-    // Camera controls
-    if(keys[GLFW_KEY_W])
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(keys[GLFW_KEY_S])
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(keys[GLFW_KEY_A])
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if(keys[GLFW_KEY_D])
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-}
-
-// Is called whenever a key is pressed/released via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
-
-    if(action == GLFW_PRESS)
-        keys[key] = true;
-    else if(action == GLFW_RELEASE)
-        keys[key] = false;  
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-  int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-  if (state != GLFW_PRESS) {
-    firstMouse = true;
-    return;
-  }
-  if(firstMouse)
-  {
-    lastX = xpos;
-    lastY = ypos;
-    firstMouse = false;
-  }
-
-  GLfloat xoffset = xpos - lastX;
-  GLfloat yoffset = lastY - ypos; 
-
-  lastX = xpos;
-  lastY = ypos;
-
-  camera.ProcessMouseMovement(xoffset, yoffset);
-} 
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-  if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-  }
-}
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
-}
-
-#pragma endregion

@@ -19,8 +19,6 @@ using namespace std;
 
 #include <mesh.hpp>
 
-GLint TextureFromFile(const char* path, string directory);
-
 // Constructor, expects a filepath to a 3D model.
 Model::Model(const GLchar* path)
 {
@@ -66,7 +64,7 @@ void Model::Draw(Shader shader)
 // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string path)
 {
-  fprintf(stderr, "Loading model at: %s\n", path.c_str());
+  //fprintf(stderr, "Loading model at: %s\n", path.c_str());
   // Read file via ASSIMP
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
@@ -86,7 +84,7 @@ void Model::loadModel(string path)
 // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
 void Model::processNode(aiNode* node, const aiScene* scene)
 {
-  fprintf(stderr, "meshes: %d\n", node->mNumMeshes);
+  //fprintf(stderr, "meshes: %d\n", node->mNumMeshes);
     // Process each mesh located at the current node
     for(GLuint i = 0; i < node->mNumMeshes; i++)
     {
@@ -109,7 +107,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     vector<Vertex> vertices;
     vector<GLuint> indices;
     vector<Texture> textures;
-    fprintf(stderr, "verticies: %d\n", mesh->mNumVertices);
+    //fprintf(stderr, "verticies: %d\n", mesh->mNumVertices);
     // Walk through each of the mesh's vertices
     for(GLuint i = 0; i < mesh->mNumVertices; i++)
     {
