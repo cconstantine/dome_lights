@@ -86,12 +86,4 @@ private:
 
   double lastTime;
   int nbFrames;
-
-  double time, dt;// Current time and enlapsed time
-  double turn;    // Model turn counter
-  double speed; // Model rotation speed
-  int wire = 0;       // Draw model in wireframe?
-  float bgColor[3];         // Background color 
-  unsigned char cubeColor[3]; // Model color (32bits RGBA)
-  TwBar *bar;         // Pointer to a tweak bar
 };
