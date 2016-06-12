@@ -75,7 +75,7 @@ int main( int argc, char** argv )
   glEnable(GL_DEPTH_TEST);
 
   std::vector<uint8_t> frameBuffer;
-  opc_client.resolve("stardome.local");
+  opc_client.resolve("localhost");
   int frameBytes =1000*10 * 3;
   frameBuffer.resize(sizeof(OPCClient::Header) + frameBytes);
 
