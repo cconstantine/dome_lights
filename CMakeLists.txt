@@ -17,6 +17,7 @@ endforeach(lib)
 cmake_minimum_required(VERSION 2.8)
 
 add_subdirectory (external)
+add_subdirectory (pixelpusher)
 set(CMAKE_CXX_FLAGS "-std=c++11" )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
@@ -44,4 +45,5 @@ add_definitions(
 add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp led_cluster.cpp renderer.cpp)
 
 target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
+
 
