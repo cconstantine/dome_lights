@@ -6,33 +6,180 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <asio.hpp>
+#include <thread>
 
-#include <pixel_pusher.h>
+using asio::ip::udp;
 
-typedef struct{
-  uint8_t mac_address[6];
-  uint8_t ip_address[4];
-  uint8_t device_type;
-  uint8_t protocol_version; // for the device, not the discovery
-  uint16_t vendor_id;
-  uint16_t product_id;
-  uint16_t hw_revision;
-  uint16_t sw_revision;
-  uint32_t link_speed;
-  uint8_t strips_attached;
-  uint8_t max_strips_per_packet;
-  uint16_t pixels_per_strip;
-  uint32_t update_period;
-  uint32_t power_total;
-  uint32_t delta_sequence;
-  uint32_t controller_id;
-  uint32_t group_id;
-  uint16_t artnet_universe;
-  uint16_t artnet_channel;
-} DiscoveryPacket;
+class Discovery {
+public:
 
-#define BUFLEN (sizeof(DiscoveryPacket))
-#define PORT 7331
+  std::string mac_address() {
+    char buf[64];
+
+    sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+      packet.mac_address[0], packet.mac_address[1], packet.mac_address[2],
+      packet.mac_address[3], packet.mac_address[4], packet.mac_address[5]);
+    return std::string(buf);
+  }
+
+  std::string ip_address() {
+    char buf[64];
+
+    sprintf(buf, "%d.%d.%d.%d",
+      packet.ip_address[0], packet.ip_address[1], packet.ip_address[2], packet.ip_address[3]);
+    return std::string(buf);
+  }
+
+  void print() {
+    printf(" mac_address: %s\n", mac_address().c_str());
+
+    printf(" ip_address: %d.%d.%d.%d\n", 
+      packet.ip_address[0], packet.ip_address[1], packet.ip_address[2], packet.ip_address[3]);
+    printf(" device_type: %d\n", packet.device_type);
+    printf(" protocol_version: %d\n", packet.protocol_version);
+    printf(" vendor_id: %d\n", packet.vendor_id);
+    printf(" product_id: %d\n", packet.product_id);
+    printf(" hw_revision: %d\n", packet.hw_revision);
+    printf(" sw_revision: %d\n", packet.sw_revision);
+    printf(" link_speed: %d\n", packet.link_speed);
+    printf(" strips_attached: %d\n", packet.strips_attached) ;
+    printf(" max_strips_per_packet: %d\n", packet.max_strips_per_packet) ;
+    printf(" pixels_per_strip: %d\n", packet.pixels_per_strip) ;
+    printf(" update_period: %d\n", packet.update_period) ;
+    printf(" power_total: %d\n", packet.power_total) ;
+    printf(" delta_sequence: %d\n", packet.delta_sequence) ;
+    printf(" controller_id: %d\n", packet.controller_id) ;
+    printf(" group_id: %d\n", packet.group_id) ;
+    printf(" artnet_universe: %d\n", packet.artnet_universe) ;
+    printf(" artnet_channel: %d\n", packet.artnet_channel) ;
+  }
+
+  struct{
+    uint8_t mac_address[6];
+    uint8_t ip_address[4];
+    uint8_t device_type;
+    uint8_t protocol_version; // for the device, not the discovery
+    uint16_t vendor_id;
+    uint16_t product_id;
+    uint16_t hw_revision;
+    uint16_t sw_revision;
+    uint32_t link_speed;
+    uint8_t strips_attached;
+    uint8_t max_strips_per_packet;
+    uint16_t pixels_per_strip;
+    uint32_t update_period;
+    uint32_t power_total;
+    uint32_t delta_sequence;
+    uint32_t controller_id;
+    uint32_t group_id;
+    uint16_t artnet_universe;
+    uint16_t artnet_channel;
+
+  } packet;
+};
+
+
+class PixelPusher
+{
+public:
+
+  PixelPusher() : packet_number(0) {
+    memset(&description, 0, sizeof(description));
+  }
+
+  void update(const Discovery& disc, const udp::endpoint& from) {
+    memcpy(&description.packet, &disc.packet, sizeof(description));
+    for(unsigned int i = 0;i < disc.packet.strips_attached;i++) {
+      pixels[i].resize(3*disc.packet.pixels_per_strip);
+
+    }
+    target = from;
+    target.port(9897);
+  }
+
+  void send() {
+    std::vector<uint8_t> packet;
+    asio::io_service io_service;
+    udp::socket sock(io_service, udp::endpoint(udp::v4(), 0));
+
+    udp::resolver resolver(io_service);
+    udp::endpoint endpoint = *resolver.resolve({udp::v4(),description.ip_address(), "9897"});
+
+    packet.clear();
+    packet.push_back((packet_number >> 24) & 0xFF);
+    packet.push_back((packet_number >> 16) & 0xFF);
+    packet.push_back((packet_number >> 8) & 0xFF);
+    packet.push_back(packet_number & 0xFF);
+    packet_number++;
+
+    
+    for(unsigned int i = 0; i < description.packet.strips_attached;i+=description.packet.max_strips_per_packet) {
+      for(unsigned int j = 0;i < description.packet.max_strips_per_packet;i++) {
+        unsigned int idx = i + j;
+        //mPacket.push_back((stripNumber >> 8) & 0xFF);
+        packet.push_back((uint8_t)(idx & 0xFF));
+
+        memset(&pixels[idx][0], 5, pixels[idx].size());
+        //printf("pixels: %ld\n", pixels[0].size());
+        std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
+      }
+    }
+
+    //printf("sending %d bytes to:\n", packet.size());
+    //std::cout << "Sending " << packet.size() << " bytes to " << endpoint << std::endl;
+    sock.send_to(asio::buffer(&packet[0],packet.size()), endpoint);
+  }
+
+  void print() {
+    description.print();
+  }
+
+private:
+  Discovery description;
+  udp::endpoint target;
+
+
+  std::vector<uint8_t> pixels[8];
+  uint32_t packet_number;
+};
+
+class DiscoveryService
+{
+public:
+  DiscoveryService(short port)
+    : socket_(io_service, udp::endpoint(udp::v4(), port)),
+      listener(&DiscoveryService::do_receive, this)
+  {  }
+
+  std::map<std::string, std::shared_ptr<PixelPusher>> pushers;
+private:
+
+  void do_receive()
+  {
+    Discovery disc;
+    while(true) {
+      size_t bytes_recvd = socket_.receive_from(asio::buffer(&disc.packet, sizeof(disc.packet)), sender_endpoint_);
+      if (bytes_recvd > 0)
+      {
+        std::string mac_address = disc.mac_address();
+        if (pushers.find(mac_address) == pushers.end()) {
+          pushers[mac_address] = std::make_shared<PixelPusher>();
+        }
+        pushers[mac_address]->update(disc, sender_endpoint_);
+        pushers[mac_address]->print();
+        printf("\n");
+      }
+    }
+  }
+
+  asio::io_service io_service;
+
+  udp::socket socket_;
+  udp::endpoint sender_endpoint_;
+  std::thread listener;
+
+};
 
 void diep(const char *s)
 {
@@ -43,72 +190,20 @@ void diep(const char *s)
 
 int main(void)
 {
-  struct sockaddr_in si_me, si_other;
-  int s;
-  socklen_t slen=sizeof(si_other);
-  unsigned char buf[512];
+  DiscoveryService ds(7331);
+  //ds.run();
+  while(true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000/16));
 
-  if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-    diep("socket");
-
-  memset((void *) &si_me, 0, sizeof(si_me));
-  si_me.sin_family = AF_INET;
-  si_me.sin_port = htons(PORT);
-  si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-  if (bind(s, (struct sockaddr*)&si_me, sizeof(si_me))==-1)
-      diep("bind");
-
-  ssize_t bytes_read = recvfrom(s, &buf, sizeof(buf), 0, (sockaddr*)&si_other, &slen);
-  if (bytes_read==-1)
-    diep("recvfrom()");
-  printf("Received %ld bytes in packet from %s:%d\n", bytes_read,
-         inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-  DeviceHeader dh(buf, bytes_read);
-  PixelPusher pp(&dh);
-  pp.setLogLevel(DEBUG);
-
-  DiscoveryPacket packet;
-  memcpy(&packet, buf, sizeof(packet));
-
-  printf("Packet:\n");
-  printf(" mac_address: %02x:%02x:%02x:%02x:%02x:%02x\n", 
-    packet.mac_address[0], packet.mac_address[1], packet.mac_address[2],
-    packet.mac_address[3], packet.mac_address[4], packet.mac_address[5]);
-  printf(" ip_address: %d.%d.%d.%d\n", 
-    packet.ip_address[0], packet.ip_address[1], packet.ip_address[2], packet.ip_address[3]);
-  printf(" device_type: %d\n", packet.device_type);
-  printf(" protocol_version: %d\n", packet.protocol_version);
-  printf(" vendor_id: %d\n", packet.vendor_id);
-  printf(" product_id: %d\n", packet.product_id);
-  printf(" hw_revision: %d\n", packet.hw_revision);
-  printf(" sw_revision: %d\n", packet.sw_revision);
-  printf(" link_speed: %d\n", packet.link_speed);
-  printf(" strips_attached: %d\n", packet.strips_attached) ;
-  printf(" max_strips_per_packet: %d\n", packet.max_strips_per_packet) ;
-  printf(" pixels_per_strip: %d\n", packet.pixels_per_strip) ;
-  printf(" update_period: %d\n", packet.update_period) ;
-  printf(" power_total: %d\n", packet.power_total) ;
-  printf(" delta_sequence: %d\n", packet.delta_sequence) ;
-  printf(" controller_id: %d\n", packet.controller_id) ;
-  printf(" group_id: %d\n", packet.group_id) ;
-  printf(" artnet_universe: %d\n", packet.artnet_universe) ;
-  printf(" artnet_channel: %d\n", packet.artnet_channel) ;
-  printf(" remaining bytes: %ld\n", bytes_read - sizeof(packet));
-  printf("\n");
-  
-  close(s);
-  while(1) {
-    printf("It has %d strips\n",pp.getNumberOfStrips());
-    for(int i = 0; i < pp.getNumberOfStrips();i++) {
-      pp.getStrip(i)->setPixels(75, 10, 40);
+    std::string mac_address("d8:80:39:65:f1:91");
+    if(ds.pushers.find(mac_address) != ds.pushers.end()) {
+      std::shared_ptr<PixelPusher> pusher = ds.pushers[mac_address];
+      pusher->send();
     }
-
-    printf("touched: %ld\n", pp.getTouchedStrips().size());
-    pp.sendPacket();
-
+    // if(pusher != nullptr) {
+    //   //pusher->send();
+    // }
   }
-
-
   // struct sockaddr_in s_client;
   // int i, slen=sizeof(s_client);
   // char buf[BUFLEN];
@@ -123,6 +218,5 @@ int main(void)
   // if (sendto(s, buf, BUFLEN, 0, (sockaddr*)&s_client, slen)==-1)
   //   diep("sendto()");
 
-  close(s);
   return 0;
 }
