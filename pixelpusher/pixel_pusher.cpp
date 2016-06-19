@@ -1,464 +1,187 @@
-#include <pixel_pusher.h>
-#include <algorithm>
-#include <ctime>
-#include <iterator>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-PixelPusher::PixelPusher(DeviceHeader* header) {
-	mArtnetUniverse = 0;
-	mArtnetChannel = 0;
-	mPort = 9897;
-	mStripsAttached = 0;
-	mPixelsPerStrip = 0;
-	mExtraDelayMsec = 0;
-	mMaxStripsPerPacket = 0;
-	mUpdatePeriod = 0;
-	mPowerTotal = 0;
-	mDeltaSequence = 0;
-	mControllerId = 0;
-	mGroupId = 0;
-	mSegments = 0;
-	mPowerDomain = 0;
-	mPacketNumber = 0;
-	mThreadDelay = 0;
-	mThreadExtraDelay = 0;
-	mTotalDelay = 0;
-	mRunCardThread = NULL;
-	mLogLevel = PRODUCTION;
+#include <stdlib.h>
+#include <string.h>
+#include <asio.hpp>
+#include <thread>
 
-	mMulticast = false;
-	mMulticastPrimary = false;
-	mAutothrottle = false;
-	mLastPingAt = std::clock() / CLOCKS_PER_SEC;
-	mResetSentAt = std::clock() / CLOCKS_PER_SEC;
-	mSendReset = false;
+#include <pixel_pusher.hpp>
 
+using asio::ip::udp;
 
-	mSocket=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	mDeviceHeader = header;
-	std::shared_ptr<unsigned char> packetRemainder = header->getPacketRemainder();
-	int packetLength = header->getPacketRemainderLength();
+std::string Discovery::mac_address() {
+  char buf[64];
 
-	if (packetLength < 28) {
-		std::printf("Packet size is too small! PixelPusher can't be created.\n");
-	}
+  sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+    packet.mac_address[0], packet.mac_address[1], packet.mac_address[2],
+    packet.mac_address[3], packet.mac_address[4], packet.mac_address[5]);
+  return std::string(buf);
+}
 
-	memcpy(&mStripsAttached, &packetRemainder.get()[0], 1);
-	memcpy(&mMaxStripsPerPacket, &packetRemainder.get()[1], 1);
-	memcpy(&mPixelsPerStrip, &packetRemainder.get()[2], 2);
-	memcpy(&mUpdatePeriod, &packetRemainder.get()[4], 4);
-	memcpy(&mPowerTotal, &packetRemainder.get()[8], 4);
-	memcpy(&mDeltaSequence, &packetRemainder.get()[12], 4);
-	memcpy(&mControllerId, &packetRemainder.get()[16], 4);
-	memcpy(&mGroupId, &packetRemainder.get()[20], 4);
-	memcpy(&mArtnetUniverse, &packetRemainder.get()[24], 2);
-	memcpy(&mArtnetChannel, &packetRemainder.get()[26], 2);
+std::string Discovery::ip_address() {
+  char buf[64];
 
-	if (packetLength < 28 && header->getSoftwareRevision() > 100) {
-		memcpy(&mPort, &packetRemainder.get()[28], 2);
-	}
-	else {
-		mPort = 9897;
-	}
-	short defaultNumberOfStrips = 8;
-	short stripFlagSize = std::max(mStripsAttached, defaultNumberOfStrips);
-	mStripFlags.resize(stripFlagSize);
+  sprintf(buf, "%d.%d.%d.%d",
+    packet.ip_address[0], packet.ip_address[1], packet.ip_address[2], packet.ip_address[3]);
+  return std::string(buf);
+}
 
-	if (packetLength > 30 && header->getSoftwareRevision() > 108) {
-		memcpy(&mStripFlags[0], &packetRemainder.get()[30], stripFlagSize);
-	}
-	else {
-		for (int i = 0; i < stripFlagSize; i++) {
-			mStripFlags[i] = 0;
-		}
-	}
-
-	if (packetLength > 30 + stripFlagSize && header->getSoftwareRevision() > 108) {
-		// set Pusher flags
-		long pusherFlags;
-		memcpy(&pusherFlags, &packetRemainder.get()[32 + stripFlagSize], 4);
-		setPusherFlags(pusherFlags);
-		memcpy(&mSegments, &packetRemainder.get()[36 + stripFlagSize], 4);
-		memcpy(&mPowerDomain, &packetRemainder.get()[40 + stripFlagSize], 4);
-	}
-
-	mPacket.reserve(400 * mMaxStripsPerPacket); //too high, can be reduced
+void Discovery::print() {
+  fprintf(stderr, " mac_address: %s\n", mac_address().c_str());
+  fprintf(stderr, " ip_address: %d.%d.%d.%d\n", 
+    packet.ip_address[0], packet.ip_address[1], packet.ip_address[2], packet.ip_address[3]);
+  fprintf(stderr, " device_type: %d\n", packet.device_type);
+  fprintf(stderr, " protocol_version: %d\n", packet.protocol_version);
+  fprintf(stderr, " vendor_id: %d\n", packet.vendor_id);
+  fprintf(stderr, " product_id: %d\n", packet.product_id);
+  fprintf(stderr, " hw_revision: %d\n", packet.hw_revision);
+  fprintf(stderr, " sw_revision: %d\n", packet.sw_revision);
+  fprintf(stderr, " link_speed: %d\n", packet.link_speed);
+  fprintf(stderr, " strips_attached: %d\n", packet.strips_attached) ;
+  fprintf(stderr, " max_strips_per_packet: %d\n", packet.max_strips_per_packet) ;
+  fprintf(stderr, " pixels_per_strip: %d\n", packet.pixels_per_strip) ;
+  fprintf(stderr, " update_period: %d\n", packet.update_period) ;
+  fprintf(stderr, " power_total: %d\n", packet.power_total) ;
+  fprintf(stderr, " delta_sequence: %d\n", packet.delta_sequence) ;
+  fprintf(stderr, " controller_id: %d\n", packet.controller_id) ;
+  fprintf(stderr, " group_id: %d\n", packet.group_id) ;
+  fprintf(stderr, " artnet_universe: %d\n", packet.artnet_universe) ;
+  fprintf(stderr, " artnet_channel: %d\n", packet.artnet_channel) ;
+  fprintf(stderr, "\n");
+}
 
 
-	for(int i = 0;i < mStripsAttached;i++) {
-		addStrip(std::make_shared<Strip>(i, mPixelsPerStrip));
-	}
+
+PixelPusher::PixelPusher() :
+ packet_number(0), sender_mutex(), sender_condition(),
+ working(true), sender_thread(&PixelPusher::background_sender, this)
+{
+  memset(&description, 0, sizeof(description));
 }
 
 PixelPusher::~PixelPusher() {
+  working = false;
+  sender_condition.notify_all();
+
+  sender_thread.join();
 }
 
-int PixelPusher::getNumberOfStrips() {
-	return mStrips.size();
+void PixelPusher::update(const Discovery& disc, const udp::endpoint& from) {
+  memcpy(&description.packet, &disc.packet, sizeof(description));
+  for(unsigned int i = 0;i < description.packet.strips_attached;i++) {
+    pixels[i].resize(3*description.packet.pixels_per_strip);
+
+  }
+  target = from;
+  target.port(9897);
 }
 
-std::deque<std::shared_ptr<Strip> > PixelPusher::getStrips() {
-	return mStrips;
+void PixelPusher::update(int strip, uint8_t *bytes, size_t size) {
+  size_t to_copy = description.packet.pixels_per_strip*3;
+  if(to_copy > size) {
+    to_copy = size;
+  }
+  memcpy(&pixels[strip][0], bytes, to_copy);
 }
 
-std::deque<std::shared_ptr<Strip> > PixelPusher::getTouchedStrips() {
-	std::deque<std::shared_ptr<Strip> > touchedStrips;
-	for (auto strip : mStrips) {
-		if (strip->isTouched()) {
-			touchedStrips.push_back(strip);
-		}
-	}
-	return touchedStrips;
+void PixelPusher::background_sender() {
+  std::unique_lock<std::mutex> sender_lock(sender_mutex);
+  do {
+    std::vector<uint8_t> packet;
+    asio::io_service io_service;
+    udp::socket sock(io_service, udp::endpoint(udp::v4(), 0));
+
+    udp::resolver resolver(io_service);
+    udp::endpoint endpoint = *resolver.resolve({udp::v4(),description.ip_address(), "9897"});
+
+
+    for(unsigned int i = 0; i < description.packet.strips_attached;i+=description.packet.max_strips_per_packet) {
+      packet.clear();
+      packet.push_back((packet_number >>  0) & 0xFF);
+      packet.push_back((packet_number >>  8) & 0xFF);
+      packet.push_back((packet_number >> 16) & 0xFF);
+      packet.push_back((packet_number >> 24) & 0xFF);
+      packet_number++;
+
+      for(unsigned int j = 0;j < description.packet.max_strips_per_packet;j++) {
+        unsigned int idx = i + j;
+        //mPacket.push_back((stripNumber >> 8) & 0xFF);
+        packet.push_back((uint8_t)(idx & 0xFF));
+
+        //memset(&pixels[idx][0], 75, pixels[idx].size());
+        //printf("pixels: %ld\n", pixels[0].size());
+        std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
+      }
+
+      sock.send_to(asio::buffer(&packet[0],packet.size()), endpoint);
+      std::this_thread::sleep_for(std::chrono::milliseconds(4));
+
+    }
+
+    sender_condition.wait(sender_lock);
+  } while (working);
+
 }
 
-void PixelPusher::addStrip(std::shared_ptr<Strip> strip) {
-	mStrips.push_back(strip);
+void PixelPusher::send(uint8_t r, uint8_t g, uint8_t b) {
+  for(int strip = 0;strip < description.packet.strips_attached;strip++) {
+    for(int i = 0;i < description.packet.pixels_per_strip;i++) {
+      pixels[strip][i*3 + 0] = r;
+      pixels[strip][i*3 + 1] = g;
+      pixels[strip][i*3 + 2] = b;
+    }
+  }
+  send();
 }
 
-std::shared_ptr<Strip> PixelPusher::getStrip(int stripNumber) {
-	if (stripNumber < mStrips.size()) {
-		return mStrips.at(stripNumber);
-	}
-	else {
-		std::printf("PixelPusher::getStrip ERROR -- Invalid strip number %d.  Returning empty strip.\n", stripNumber);
-		return std::shared_ptr<Strip>();
-	}
+
+void PixelPusher::send() {
+  sender_condition.notify_all();
 }
 
-int PixelPusher::getMaxStripsPerPacket() {
-	return mMaxStripsPerPacket;
+void PixelPusher::print() {
+  description.print();
 }
 
-int PixelPusher::getPixelsPerStrip(int stripNumber) {
-	if (stripNumber < mStrips.size() - 1) {
-		return mStrips.at(stripNumber)->getLength();
-	}
-	else {
-		std::printf("PixelPusher::getPixelsPerStrip ERROR -- Invalid strip number %d.\n", stripNumber);
-		return 0;
-	}
+
+
+DiscoveryService::DiscoveryService(short port)
+  : socket_(io_service, udp::endpoint(udp::v4(), port)),
+    listener(&DiscoveryService::do_receive, this),working(true)
+{  }
+
+DiscoveryService::~DiscoveryService() {
+  working = false;
+
+  for (std::map<std::string, std::shared_ptr<PixelPusher>>::iterator it=pushers.begin(); it!=pushers.end(); ++it) {
+    std::shared_ptr<PixelPusher> pusher = it->second;
+    pusher->send(0, 0, 0);
+  }
+
+  io_service.stop();
+  listener.join();
 }
 
-void PixelPusher::setStripValues(int stripNumber, unsigned char red, unsigned char green, unsigned char blue) {
-	if (stripNumber < mStrips.size() - 1) {
-		mStrips.at(stripNumber)->setPixels(red, green, blue);
-	}
-	else {
-		std::printf("PixelPusher::setStripValues ERROR -- Invalid strip number %d.\n", stripNumber);
-	}
-}
-
-void PixelPusher::setStripValues(int stripNumber, std::vector<std::shared_ptr<Pixel> > pixels) {
-	if (stripNumber < mStrips.size() - 1) {
-		mStrips.at(stripNumber)->setPixels(pixels);
-	}
-	else {
-		std::printf("PixelPusher::setStripValues ERROR -- Invalid strip number %d.\n", stripNumber);
-	}
-}
-
-void PixelPusher::setPowerScale(double powerScale) {
-	for (auto strip : mStrips) {
-		strip->setPowerScale(powerScale);
-	}
-}
-
-void PixelPusher::setPowerScale(int stripNumber, double powerScale) {
-	if (stripNumber < mStrips.size() - 1) {
-		mStrips.at(stripNumber)->setPowerScale(powerScale);
-	}
-	else {
-		std::printf("PixelPusher::setPowerScale ERROR -- Invalid strip number %d.\n", stripNumber);
-	}
-}
-
-void PixelPusher::setColorTemperature(Pixel::ColorTemperature temperature) {
-	for (auto strip : mStrips) {
-		strip->setColorTemperature(temperature);
-	}
-}
-
-void PixelPusher::setColorCorrection(Pixel::ColorCorrection correction) {
-	for (auto strip : mStrips) {
-		strip->setColorCorrection(correction);
-	}
-}
-
-void PixelPusher::setAntilog(bool antilog) {
-	for (auto strip : mStrips) {
-		for (auto pixel : strip->getPixels()) {
-			pixel->setAntiLog(antilog);
-		}
-	}
-}
-
-std::string PixelPusher::getMacAddress() {
-	return mDeviceHeader->getMacAddressString();
-}
-
-std::string PixelPusher::getIpAddress() {
-	return mDeviceHeader->getIpAddressString();
-}
-
-void PixelPusher::sendPacket() {
-	bool payload = false;
-	mThreadDelay = 16.0;
-	mPacket.clear();
-	std::deque<std::shared_ptr<Strip> > remainingStrips = getTouchedStrips();
-
-	if (getUpdatePeriod() > 100000.0) {
-		mThreadDelay = (16.0 / (mStripsAttached / mMaxStripsPerPacket));
-	}
-	else if (getUpdatePeriod() > 1000.0) {
-		mThreadDelay = (getUpdatePeriod() / 1000.0) + 1;
-	}
-	else {
-		mThreadDelay = ((1000.0 / mFrameLimit) / (mStripsAttached / mMaxStripsPerPacket));
-	}
-
-	mTotalDelay = mThreadDelay + mThreadExtraDelay + mExtraDelayMsec;
-
-	if (mLogLevel == DEBUG) {
-		std::printf("PixelPusher::sendPacket -- Updating total delay for PixelPusher %s to %ld\n", getMacAddress().c_str(), mTotalDelay);
-	}
-
-	if (!mSendReset && remainingStrips.empty()) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(mTotalDelay));
-	}
-
-	while (!remainingStrips.empty()) {
-		if (mLogLevel == DEBUG) {
-			std::printf("PixelPusher::sendPacket -- Sending data to PixelPusher %s at %s:%d\n", getMacAddress().c_str(), getIpAddress().c_str(), mPort);
-		}
-		payload = false;
-		mPacket.clear();
-
-		mPacket.push_back((mPacketNumber >> 24) & 0xFF);
-		mPacket.push_back((mPacketNumber >> 16) & 0xFF);
-		mPacket.push_back((mPacketNumber >> 8) & 0xFF);
-		mPacket.push_back(mPacketNumber & 0xFF);
-
-		for (int i = 0; i < mMaxStripsPerPacket; i++) {
-			if (remainingStrips.empty()) {
-				printf("short\n");
-				std::this_thread::sleep_for(std::chrono::milliseconds(mTotalDelay));
-				continue;
-			}
-
-			std::shared_ptr<Strip> strip = remainingStrips.front();
-			strip->serialize();
-			short stripNumber = strip->getStripNumber();
-			//mPacket.push_back((stripNumber >> 8) & 0xFF);
-			mPacket.push_back(stripNumber & 0xFF);
-
-			std::copy(strip->begin(), strip->end(), std::back_inserter(mPacket));
-			//copy doesn't seem to add stuff to mPacket...
-			payload = true;
-			remainingStrips.pop_front();
-		}
-
-		if (payload) {
-			if (mLogLevel == DEBUG) {
-				std::printf("PixelPusher::sendPacket -- Payload confirmed; sending packet of %ld bytes\n", mPacket.size());
-			}
-			mPacketNumber++;
+std::map<std::string, std::shared_ptr<PixelPusher>> pushers;
 
 
-
-			struct sockaddr_in s_client;
-			int slen=sizeof(s_client);
-
-			memset((char *) &s_client, 0, sizeof(s_client));
-			s_client.sin_family = AF_INET;
-			s_client.sin_port = htons(getPort());
-			
-		  if (inet_aton(getIpAddress().c_str(), &s_client.sin_addr)==0) {
-				fprintf(stderr, "inet_aton() failed\n");
-				exit(1);
-			}
-
-			ssize_t sent = sendto(mSocket, &mPacket[0], mPacket.size(), 0, (sockaddr*)&s_client, slen);
-			printf("sent: %ld of %ld\n",  sent, mPacket.size());
-//				std::shared_ptr<ofxAsio::Datagram> packet = std::make_shared<ofxAsio::Datagram>(mPacket, getIpAddress(), getPort());
-//				mCardThreadSender->send(packet);
-//				payload = false;
-			std::this_thread::sleep_for(std::chrono::milliseconds(mTotalDelay));
-		}
-	}
-}
-
-void PixelPusher::setPusherFlags(long pusherFlags) {
-	mPusherFlags = pusherFlags;
-}
-
-long PixelPusher::getGroupId() {
-	return mGroupId;
-}
-
-long PixelPusher::getControllerId() {
-	return mControllerId;
-}
-
-long PixelPusher::getDeltaSequence() {
-	return mDeltaSequence;
-}
-
-void PixelPusher::increaseExtraDelay(long delay) {
-	mExtraDelayMsec += delay;
-}
-
-void PixelPusher::decreaseExtraDelay(long delay) {
-	if (mExtraDelayMsec >= delay) {
-		mExtraDelayMsec -= delay;
-	}
-	else {
-		mExtraDelayMsec = 0;
-	}
-}
-
-long PixelPusher::getExtraDelay() {
-	return mExtraDelayMsec;
-}
-
-long PixelPusher::getUpdatePeriod() {
-	return mUpdatePeriod;
-}
-
-short PixelPusher::getArtnetChannel() {
-	return mArtnetChannel;
-}
-
-short PixelPusher::getArtnetUniverse() {
-	return mArtnetUniverse;
-}
-
-short PixelPusher::getPort() {
-	return mPort;
-}
-
-long PixelPusher::getPowerTotal() {
-	return mPowerTotal;
-}
-
-long PixelPusher::getPowerDomain() {
-	return mPowerDomain;
-}
-
-long PixelPusher::getSegments() {
-	return mSegments;
-}
-
-long PixelPusher::getPusherFlags() {
-	return mPusherFlags;
-}
-
-void PixelPusher::copyHeader(std::shared_ptr<PixelPusher> pusher) {
-	mControllerId = pusher->mControllerId;
-	mDeltaSequence = pusher->mDeltaSequence;
-	mGroupId = pusher->mGroupId;
-	mMaxStripsPerPacket = pusher->mMaxStripsPerPacket;
-	mPowerTotal = pusher->mPowerTotal;
-	mUpdatePeriod = pusher->mUpdatePeriod;
-	mArtnetChannel = pusher->mArtnetChannel;
-	mArtnetUniverse = pusher->mArtnetUniverse;
-	mPort = pusher->mPort;
-	setPusherFlags(pusher->getPusherFlags());
-	mPowerDomain = pusher->mPowerDomain;
-	mLastPingAt = std::clock() / CLOCKS_PER_SEC;
-}
-
-void PixelPusher::updateVariables(std::shared_ptr<PixelPusher> pusher) {
-	mDeltaSequence = pusher->mDeltaSequence;
-	mMaxStripsPerPacket = pusher->mMaxStripsPerPacket;
-	mPowerTotal = pusher->mPowerTotal;
-	mUpdatePeriod = pusher->mUpdatePeriod;
-	mLastPingAt = std::clock() / CLOCKS_PER_SEC;
-}
-
-bool PixelPusher::isEqual(std::shared_ptr<PixelPusher> pusher) {
-	long updatePeriodDifference = getUpdatePeriod() - pusher->getUpdatePeriod();
-	if (abs(updatePeriodDifference) > 500) {
-		return false;
-	}
-
-	if (getNumberOfStrips() != pusher->getNumberOfStrips()) {
-		return false;
-	}
-
-	if (mArtnetChannel != pusher->getArtnetChannel() || mArtnetUniverse != pusher->getArtnetUniverse()) {
-		return false;
-	}
-
-	if (mPort != pusher->getPort()) {
-		return false;
-	}
-
-	long powerTotalDifference = mPowerTotal - pusher->getPowerTotal();
-	if (abs(powerTotalDifference) > 10000) {
-		return false;
-	}
-
-	if (getPowerDomain() != pusher->getPowerDomain()) {
-		return false;
-	}
-
-	if (getSegments() != pusher->getSegments()) {
-		return false;
-	}
-
-	if (getPusherFlags() != pusher->getPusherFlags()) {
-		return false;
-	}
-
-	return true;
-}
-
-bool PixelPusher::isAlive() {
-	if ((std::clock() / CLOCKS_PER_SEC - mLastPingAt) < mTimeoutTime) {
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-
-void PixelPusher::createStrips() {
-	for (int i = 0; i < mStripsAttached; i++) {
-		std::shared_ptr<Strip> newStrip(new Strip(i, mPixelsPerStrip));
-		mStrips.push_back(newStrip);
-	}
-}
-
-void PixelPusher::createCardThread() {
-	createStrips();
-
-	//mCardThreadSender = std::make_shared<ofxAsio::UdpSender>();
-	if (mLogLevel == DEBUG) {
-		std::printf("PixelPusher::createCardThread -- Connected to PixelPusher %s on port %d\n", getIpAddress().c_str(), mPort);
-	}
-	mPacketNumber = 0;
-	mThreadExtraDelay = 0;
-	mCardThread = std::thread(&PixelPusher::sendPacket, this);
-}
-
-void PixelPusher::destroyCardThread() {
-	mRunCardThread = false;
-	if (mCardThread.joinable()) {
-		mCardThread.join();
-	}
-}
-
-void PixelPusher::setLogLevel(LogLevel log_level) {
-	mLogLevel = log_level;
-}
-
-LogLevel PixelPusher::getLogLevel() {
-	return mLogLevel;
+void DiscoveryService::do_receive()
+{
+  Discovery disc;
+  while(working) {
+    size_t bytes_recvd = socket_.receive_from(asio::buffer(&disc.packet, sizeof(disc.packet)), sender_endpoint_);
+    if (bytes_recvd > 0)
+    {
+      std::string mac_address = disc.mac_address();
+      if (pushers.find(mac_address) == pushers.end()) {
+        pushers[mac_address] = std::make_shared<PixelPusher>();
+      }
+      pushers[mac_address]->update(disc, sender_endpoint_);
+      //pushers[mac_address]->print();
+    }
+  }
 }

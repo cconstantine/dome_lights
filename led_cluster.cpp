@@ -6,31 +6,33 @@
 
 LedCluster::LedCluster(const Texture& texture)
 : balls("../models/ball.obj",  texture),
-  plane("../models/plane.obj", texture) {
+  plane("../models/plane.obj", texture),
+  ds(7331) {
 
   Assimp::Importer importer;
 
   model = importer.ReadFile("../models/dome.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
-  addStrip( 2,  0, 72);
-  addStrip( 2, 22, 82);
-  addStrip( 2, 28, 84);
-  addStrip( 2,  3, 84);
+  std::string mac1("d8:80:39:65:f1:91");
+  addStrip(mac1, 0,  0,  2,  0, 72);
+  addStrip(mac1, 0, 72,  2, 22, 82);
+  addStrip(mac1, 1,  0,  2, 28, 84);
+  addStrip(mac1, 1, 84,  2,  3, 84);
 
-  addStrip( 1,  0, 72);
-  addStrip( 1,  2, 82);
-  addStrip( 1,  3, 84);
-  addStrip( 1, 11, 84);
+  addStrip(mac1, 2,  0,  1,  0, 72);
+  addStrip(mac1, 2, 72,  1,  2, 82);
+  addStrip(mac1, 3,  0,  1,  3, 84);
+  addStrip(mac1, 3, 84,  1, 11, 84);
 
-  addStrip(10,  0, 72);
-  addStrip(10,  1, 82);
-  addStrip(10, 11, 84);
-  addStrip(10, 17, 84);
+  addStrip(mac1, 4,  0, 10,  0, 72);
+  addStrip(mac1, 4, 72, 10,  1, 82);
+  addStrip(mac1, 5,  0, 10, 11, 84);
+  addStrip(mac1, 5, 84, 10, 17, 84);
 
-  addStrip(16,  0, 72);
-  addStrip(16, 10, 82);
-  addStrip(16, 17, 84);
-  addStrip(16, 23, 84);
+  addStrip(mac1, 6,  0, 16,  0, 72);
+  addStrip(mac1, 6, 72, 16, 10, 82);
+  addStrip(mac1, 7,  0, 16, 17, 84);
+  addStrip(mac1, 7, 84, 16, 23, 84);
 
   addStrip(22,  0, 72);
   addStrip(22, 16, 82);
@@ -155,6 +157,32 @@ LedCluster::LedCluster(const Texture& texture)
   addStrip(30,  7, 72);
 }
 
+void LedCluster::update(std::vector<uint8_t> &frameBuffer) {
+
+  for(auto i: strip_mappings) {
+    std::string mac_address = i.first;
+    std::vector<Strip> strips = i.second;
+
+    if(ds.pushers.find(mac_address) != ds.pushers.end()) {
+      std::shared_ptr<PixelPusher> pusher = ds.pushers[mac_address];
+
+      for(auto strip: strips) {
+        pusher->update(strip.strip, &frameBuffer[strip.offset], strip.size);
+      }
+
+      pusher->send();
+    }
+
+  }
+}
+
+void LedCluster::addStrip(std::string &mac, int strip, int strip_offset, int start, int end, int divisions) {
+  int byte_offset = buffer_size + strip_offset*3;
+  strip_mappings[mac].push_back(Strip(strip, byte_offset, divisions*3));
+  buffer_size += divisions*3;
+
+  addStrip(start, end, divisions);
+}
 
 void LedCluster::addStrip(int start, int end, int divisions) {
   glm::vec3 vertex_start = glm::vec3(
@@ -192,3 +220,11 @@ void LedCluster::addStrip(int start, int end, int divisions) {
   }
 }
 
+
+LedCluster::Strip::Strip() :strip(0), offset(0), size(0) {}
+
+LedCluster::Strip::Strip(int strip, int offset, int size) :
+  strip(strip), offset(offset), size(size) {}
+
+LedCluster::Strip::Strip(const Strip& copy) :
+  strip(copy.strip), offset(copy.offset), size(copy.size) {}

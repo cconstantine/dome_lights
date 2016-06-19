@@ -10,13 +10,7 @@ include_directories(
   .
 )
 
-add_library(pixel_pusher 
- device_header.cpp pixel_pusher.cpp strip.cpp pixel.cpp)
-
-add_executable(pixel_pusher_listener pixel_pusher_listener.cpp)
-
-target_link_libraries(pixel_pusher_listener pixel_pusher )
 
 add_executable(pixel_pusher_sender pixel_pusher_sender.cpp)
 
-target_link_libraries(pixel_pusher_sender pixel_pusher )
+target_link_libraries(pixel_pusher_sender pthread)

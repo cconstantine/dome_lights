@@ -30,6 +30,7 @@ include_directories(
 	external/glew-1.13.0/include/
 	external/assimp-3.2/include/
 	external/bullet-2.81-rev2613/src/
+	pixelpusher/
 	.
 )
 
@@ -42,7 +43,7 @@ add_definitions(
 )
 
 
-add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp led_cluster.cpp renderer.cpp)
+add_executable(dome_lights main.cpp shader.cpp model.cpp mesh.cpp camera.cpp led_cluster.cpp renderer.cpp pixelpusher/pixel_pusher.cpp)
 
 target_link_libraries(dome_lights glfw GLEW_1130 ${OPENGL_LIBRARY} assimp ${LIBS})
 

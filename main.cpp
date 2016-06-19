@@ -26,10 +26,6 @@ const int canvasSize = 400;
 #include <led_cluster.hpp>
 #include <renderer.hpp>
 
-#include <opc_client.h>
-
-OPCClient opc_client;
-
 int main( int argc, char** argv )
 {
 	// Initialise GLFW
@@ -75,14 +71,11 @@ int main( int argc, char** argv )
   glEnable(GL_DEPTH_TEST);
 
   std::vector<uint8_t> frameBuffer;
-  opc_client.resolve("localhost");
   int frameBytes =1000*10 * 3;
-  frameBuffer.resize(sizeof(OPCClient::Header) + frameBytes);
-
-  OPCClient::Header::view(frameBuffer).init(0, opc_client.SET_PIXEL_COLORS, frameBytes);
+  frameBuffer.resize(frameBytes);
 
   //FrameBufferRender fb_screen(3, domeLeds.balls.numInstances());
-  FrameBufferRender fb_screen(1000, 10, OPCClient::Header::view(frameBuffer).data());
+  FrameBufferRender fb_screen(1000, 10, &frameBuffer[0]);
   ScreenRender screen_renderer(window);
   Scene scene(&screen_renderer, &fb_screen);
   
@@ -118,15 +111,12 @@ int main( int argc, char** argv )
 
     // Render the scene
     scene.render();
-    
-    opc_client.write(frameBuffer);
+
+    domeLeds.update(frameBuffer);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
 	}
-
-  memset(OPCClient::Header::view(frameBuffer).data(), 0, frameBytes);
-  opc_client.write(frameBuffer);
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
