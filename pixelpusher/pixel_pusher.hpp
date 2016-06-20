@@ -56,7 +56,7 @@ public:
   ~PixelPusher();
 
   void update(const Discovery& disc, const asio::ip::udp::endpoint& from);
-  void update(int strip, uint8_t* bytes, size_t size);
+  void update(int strip, uint8_t* bytes, size_t size, size_t offset);
 
   void send();
   void send(uint8_t r, uint8_t g, uint8_t b);

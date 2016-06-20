@@ -80,12 +80,12 @@ void PixelPusher::update(const Discovery& disc, const udp::endpoint& from) {
   target.port(9897);
 }
 
-void PixelPusher::update(int strip, uint8_t *bytes, size_t size) {
+void PixelPusher::update(int strip, uint8_t *bytes, size_t size, size_t offset) {
   size_t to_copy = description.packet.pixels_per_strip*3;
   if(to_copy > size) {
     to_copy = size;
   }
-  memcpy(&pixels[strip][0], bytes, to_copy);
+  memcpy(&pixels[strip][offset], bytes, to_copy);
 }
 
 void PixelPusher::background_sender() {

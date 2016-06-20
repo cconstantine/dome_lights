@@ -29,10 +29,10 @@ private:
   class Strip {
   public:
     Strip();
-    Strip(int strip, int offset, int size);
+    Strip(int strip, int strip_offset, int offset, int size);
     Strip(const Strip& copy);
 
-    int strip, offset;
+    int strip, strip_offset, offset;
     size_t size;
   };
 
