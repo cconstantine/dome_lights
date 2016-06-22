@@ -88,6 +88,7 @@ public:
 private:
 
   void do_receive();
+  void thread_method();
 
   asio::io_service io_service;
 
@@ -95,5 +96,7 @@ private:
   asio::ip::udp::endpoint sender_endpoint_;
   std::thread listener;
   bool working;
+
+  Discovery disc;
 
 };

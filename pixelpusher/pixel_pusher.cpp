@@ -90,7 +90,9 @@ void PixelPusher::update(int strip, uint8_t *bytes, size_t size, size_t offset) 
 
 void PixelPusher::background_sender() {
   std::unique_lock<std::mutex> sender_lock(sender_mutex);
-  do {
+  while(working) {
+    sender_condition.wait(sender_lock);
+
     std::vector<uint8_t> packet;
     asio::io_service io_service;
     udp::socket sock(io_service, udp::endpoint(udp::v4(), 0));
@@ -109,11 +111,8 @@ void PixelPusher::background_sender() {
 
       for(unsigned int j = 0;j < description.packet.max_strips_per_packet;j++) {
         unsigned int idx = i + j;
-        //mPacket.push_back((stripNumber >> 8) & 0xFF);
         packet.push_back((uint8_t)(idx & 0xFF));
 
-        //memset(&pixels[idx][0], 75, pixels[idx].size());
-        //printf("pixels: %ld\n", pixels[0].size());
         std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
       }
 
@@ -121,9 +120,7 @@ void PixelPusher::background_sender() {
       std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
     }
-
-    sender_condition.wait(sender_lock);
-  } while (working);
+  }
 
 }
 
@@ -151,7 +148,7 @@ void PixelPusher::print() {
 
 DiscoveryService::DiscoveryService(short port)
   : socket_(io_service, udp::endpoint(udp::v4(), port)),
-    listener(&DiscoveryService::do_receive, this),working(true)
+    listener(&DiscoveryService::thread_method, this),working(true)
 {  }
 
 DiscoveryService::~DiscoveryService() {
@@ -163,7 +160,10 @@ DiscoveryService::~DiscoveryService() {
   }
 
   io_service.stop();
-  listener.join();
+
+  if (listener.joinable()) {
+    listener.join();
+  }
 }
 
 std::map<std::string, std::shared_ptr<PixelPusher>> pushers;
@@ -171,17 +171,25 @@ std::map<std::string, std::shared_ptr<PixelPusher>> pushers;
 
 void DiscoveryService::do_receive()
 {
-  Discovery disc;
-  while(working) {
-    size_t bytes_recvd = socket_.receive_from(asio::buffer(&disc.packet, sizeof(disc.packet)), sender_endpoint_);
-    if (bytes_recvd > 0)
-    {
-      std::string mac_address = disc.mac_address();
-      if (pushers.find(mac_address) == pushers.end()) {
-        pushers[mac_address] = std::make_shared<PixelPusher>();
+  socket_.async_receive_from(
+    asio::buffer(&disc, sizeof(disc)), sender_endpoint_, [this](std::error_code ec, std::size_t bytes_recvd) {
+      if (bytes_recvd > 0) {
+        std::string mac_address = disc.mac_address();
+        if (pushers.find(mac_address) == pushers.end()) {
+          pushers[mac_address] = std::make_shared<PixelPusher>();
+        }
+        pushers[mac_address]->update(disc, sender_endpoint_);
+        //pushers[mac_address]->print();
       }
-      pushers[mac_address]->update(disc, sender_endpoint_);
-      //pushers[mac_address]->print();
+
+      if (working) {
+        do_receive();
+      }
     }
-  }
+  );
+}
+
+void DiscoveryService::thread_method() {
+  do_receive();
+  io_service.run();
 }
