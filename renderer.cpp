@@ -93,9 +93,9 @@ void Scene::render() {
   double currentTime = glfwGetTime();
   nbFrames++;
   if ( currentTime - lastTime >= 1.0 ){
-    if (nbFrames < 60) {
-      printf("%2.4f ms/frame\n", 1000.0/double(nbFrames)); 
-    }
+    //if (nbFrames < 60) {
+      printf("%2.4f ms/fram ( %d fps)\n", 1000.0/double(nbFrames), nbFrames); 
+    //}
     nbFrames = 0;
     lastTime = currentTime;
   }

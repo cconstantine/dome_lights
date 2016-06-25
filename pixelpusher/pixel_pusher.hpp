@@ -64,6 +64,10 @@ public:
   void print();
 
   std::vector<uint8_t> pixels[8];
+
+  int delay;
+
+  int delta_sequence();
 private:
   Discovery description;
   asio::ip::udp::endpoint target;

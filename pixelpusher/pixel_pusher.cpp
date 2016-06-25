@@ -57,7 +57,7 @@ void Discovery::print() {
 
 
 PixelPusher::PixelPusher() :
- packet_number(0), sender_mutex(), sender_condition(),
+ packet_number(0), sender_mutex(), sender_condition(), delay(4),
  working(true), sender_thread(&PixelPusher::background_sender, this)
 {
   memset(&description, 0, sizeof(description));
@@ -92,6 +92,7 @@ void PixelPusher::background_sender() {
   std::unique_lock<std::mutex> sender_lock(sender_mutex);
   while(working) {
     sender_condition.wait(sender_lock);
+    //fprintf(stderr, "unlocked\n");
 
     std::vector<uint8_t> packet;
     asio::io_service io_service;
@@ -102,7 +103,9 @@ void PixelPusher::background_sender() {
 
 
     for(unsigned int i = 0; i < description.packet.strips_attached;i+=description.packet.max_strips_per_packet) {
+      //dsfprintf(stderr, "i: %d\n", i);
       packet.clear();
+      //fprintf(stderr, "packet_number: %d\n", packet_number);
       packet.push_back((packet_number >>  0) & 0xFF);
       packet.push_back((packet_number >>  8) & 0xFF);
       packet.push_back((packet_number >> 16) & 0xFF);
@@ -116,8 +119,8 @@ void PixelPusher::background_sender() {
         std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
       }
 
+      std::this_thread::sleep_for(std::chrono::milliseconds(delay));
       sock.send_to(asio::buffer(&packet[0],packet.size()), endpoint);
-      std::this_thread::sleep_for(std::chrono::milliseconds(4));
 
     }
   }
@@ -137,6 +140,7 @@ void PixelPusher::send(uint8_t r, uint8_t g, uint8_t b) {
 
 
 void PixelPusher::send() {
+  //fprintf(stderr, "notifying\n");
   sender_condition.notify_all();
 }
 
@@ -144,6 +148,9 @@ void PixelPusher::print() {
   description.print();
 }
 
+int PixelPusher::delta_sequence(){
+  return description.packet.delta_sequence;
+}
 
 
 DiscoveryService::DiscoveryService(short port)
@@ -179,7 +186,14 @@ void DiscoveryService::do_receive()
           pushers[mac_address] = std::make_shared<PixelPusher>();
         }
         pushers[mac_address]->update(disc, sender_endpoint_);
-        //pushers[mac_address]->print();
+        pushers[mac_address]->print();
+        int delta_sequence = pushers[mac_address]->delta_sequence();
+        if(delta_sequence > 3) {
+          pushers[mac_address]->delay += 5;
+        } else if (delta_sequence == 0) {
+          pushers[mac_address]->delay -= 1;
+        }
+        fprintf(stderr, "delay: %d\n", pushers[mac_address]->delay);
       }
 
       if (working) {
