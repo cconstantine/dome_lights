@@ -76,6 +76,9 @@ public:
 
   void Do_Movement();
   IsoCamera perspective;
+
+  float getGamma();
+  bool nextPattern();
 private:
 
   ScreenRender* screen;
@@ -86,4 +89,6 @@ private:
 
   double lastTime;
   int nbFrames;
+  float gamma;
+  bool next;
 };

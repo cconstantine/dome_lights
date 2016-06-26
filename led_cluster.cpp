@@ -1,4 +1,5 @@
 #include <led_cluster.hpp>
+#include <math.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -7,8 +8,9 @@
 LedCluster::LedCluster(const Texture& texture)
 : balls("../models/ball.obj",  texture),
   plane("../models/plane.obj", texture),
-  ds(7331) {
-
+  ds(7331), buffer_size(0), gamma(0.5)
+{
+  setGamma(gamma);
   Assimp::Importer importer;
 
   model = importer.ReadFile("../models/dome.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
@@ -96,8 +98,19 @@ LedCluster::LedCluster(const Texture& texture)
 
 }
 
-void LedCluster::update(std::vector<uint8_t> &frameBuffer) {
+void LedCluster::setGamma(float g) {
+  gamma = g;
 
+  for(int i = 0;i < 256;i++) {
+    lut[i] = pow(i, gamma);
+  }
+}
+
+void LedCluster::update(std::vector<uint8_t> &frameBuffer) {
+  uint8_t buff[frameBuffer.size()];
+  for(int i = 0;i < frameBuffer.size();i++) {
+    buff[i] = lut[frameBuffer[i]];
+  }
   for(auto i: strip_mappings) {
     std::string mac_address = i.first;
     std::vector<Strip> strips = i.second;
@@ -106,9 +119,8 @@ void LedCluster::update(std::vector<uint8_t> &frameBuffer) {
       std::shared_ptr<PixelPusher> pusher = ds.pushers[mac_address];
 
       for(auto strip: strips) {
-        pusher->update(strip.strip, &frameBuffer[strip.offset], strip.size, strip.strip_offset);
+        pusher->update(strip.strip, &buff[strip.offset], strip.size, strip.strip_offset);
       }
-
       pusher->send();
     }
 
@@ -160,10 +172,10 @@ void LedCluster::addStrip(int start, int end, int divisions) {
 }
 
 
-LedCluster::Strip::Strip() :strip(0), strip_offset(0), offset(0), size(0) {}
+LedCluster::Strip::Strip() :strip(0), strip_offset(0), offset(0), size(0) { }
 
 LedCluster::Strip::Strip(int strip, int strip_offset, int offset, int size) :
-  strip(strip), strip_offset(strip_offset), offset(offset), size(size) {}
+  strip(strip), strip_offset(strip_offset), offset(offset), size(size) { }
 
 LedCluster::Strip::Strip(const Strip& copy) :
-  strip(copy.strip), strip_offset(copy.strip_offset), offset(copy.offset), size(copy.size) {}
+  strip(copy.strip), strip_offset(copy.strip_offset), offset(copy.offset), size(copy.size) { }

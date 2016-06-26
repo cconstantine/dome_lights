@@ -20,10 +20,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
       glfwSetWindowShouldClose(window, GL_TRUE);
 
-  if(action == GLFW_PRESS)
-      keys[key] = true;
-  else if(action == GLFW_RELEASE)
-      keys[key] = false;  
+  if(action == GLFW_PRESS) {
+      keys[key] = true;  
+  }
+  else if(action == GLFW_RELEASE) {
+      keys[key] = false;
+  }
+    
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
@@ -76,7 +79,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 Scene::Scene(ScreenRender* screen, FrameBufferRender* fb_render) :
   perspective(glm::vec3(0.0f, 1.0f, 2.8f)), screen(screen), fb_render(fb_render),
-  deltaTime(0.0f), lastFrame(0.0f), lastTime(glfwGetTime()), nbFrames(0)
+  deltaTime(0.0f), lastFrame(0.0f), lastTime(glfwGetTime()), nbFrames(0), gamma(0.5), next(false)
 {
   glfwSetWindowUserPointer(screen->window, this);
 
@@ -108,6 +111,21 @@ void Scene::render() {
   fb_render->render(perspective);
 }
 
+float Scene::getGamma()
+{
+  return gamma;
+}
+
+bool Scene::nextPattern() {
+
+  bool ret = keys[GLFW_KEY_N];
+  if(ret) {
+    keys[GLFW_KEY_N] = false;
+  }
+
+  return ret;
+}
+
 void Scene::Do_Movement()
 {
     // Camera controls
@@ -119,6 +137,16 @@ void Scene::Do_Movement()
         perspective.ProcessKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
         perspective.ProcessKeyboard(RIGHT, deltaTime);
+
+    for(int i = 48;i <= 57;i++) {
+      if (keys[i]) {
+        int val = i - 48;
+        if(val == 0) {
+          val = 10;
+        }
+        gamma = (float)(val) / 10.0; 
+      }
+    }
 }
 
 SceneRender::SceneRender() :

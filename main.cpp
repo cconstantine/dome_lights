@@ -79,7 +79,14 @@ int main( int argc, char** argv )
   ScreenRender screen_renderer(window);
   Scene scene(&screen_renderer, &fb_screen);
   
-  Shader pattern("../shaders/pattern.frag", argv[1]);
+  fprintf(stderr, "argc: %d\n", argc);
+  vector<Shader> patterns;
+  for(int i = 1;i < argc;i++) {
+    patterns.push_back(Shader("../shaders/pattern.frag", argv[i]));
+  }
+
+  Shader pattern = patterns[rand() % patterns.size()];
+
 
   PatternRender pattern_render(canvasSize, canvasSize);
   Texture texture = pattern_render.getTexture();
@@ -112,6 +119,11 @@ int main( int argc, char** argv )
     // Render the scene
     scene.render();
 
+    domeLeds.setGamma(scene.getGamma());
+    bool next = scene.nextPattern();
+    if (next) {
+      pattern = patterns[rand() % patterns.size()];
+    }
     domeLeds.update(frameBuffer);
 
 		// Swap buffers

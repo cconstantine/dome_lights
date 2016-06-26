@@ -7,6 +7,8 @@
 
 #include <GL/glew.h>
 
+Shader::Shader(const Shader& copy) : Program(copy.Program)  { }
+
 Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath) {
   fprintf(stderr, "Loading: %s, %s\n", vertexPath, fragmentPath);
   // 1. Retrieve the vertex/fragment source code from filePath

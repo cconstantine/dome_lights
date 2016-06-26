@@ -51,7 +51,7 @@ void Discovery::print() {
   fprintf(stderr, " group_id: %d\n", packet.group_id) ;
   fprintf(stderr, " artnet_universe: %d\n", packet.artnet_universe) ;
   fprintf(stderr, " artnet_channel: %d\n", packet.artnet_channel) ;
-  fprintf(stderr, "\n");
+
 }
 
 
@@ -81,9 +81,9 @@ void PixelPusher::update(const Discovery& disc, const udp::endpoint& from) {
 }
 
 void PixelPusher::update(int strip, uint8_t *bytes, size_t size, size_t offset) {
-  size_t to_copy = description.packet.pixels_per_strip*3;
-  if(to_copy > size) {
-    to_copy = size;
+  size_t to_copy = size;
+  if(to_copy > description.packet.pixels_per_strip*3) {
+    to_copy = description.packet.pixels_per_strip*3;
   }
   memcpy(&pixels[strip][offset], bytes, to_copy);
 }
@@ -146,6 +146,8 @@ void PixelPusher::send() {
 
 void PixelPusher::print() {
   description.print();
+  fprintf(stderr, " render delay: %d\n", delay);
+  fprintf(stderr, "\n");
 }
 
 int PixelPusher::delta_sequence(){
@@ -186,14 +188,15 @@ void DiscoveryService::do_receive()
           pushers[mac_address] = std::make_shared<PixelPusher>();
         }
         pushers[mac_address]->update(disc, sender_endpoint_);
-        pushers[mac_address]->print();
+        
         int delta_sequence = pushers[mac_address]->delta_sequence();
         if(delta_sequence > 3) {
-          pushers[mac_address]->delay += 5;
-        } else if (delta_sequence == 0) {
+          pushers[mac_address]->delay += 3;
+        } else if (pushers[mac_address]->delay > 0 && delta_sequence == 0) {
           pushers[mac_address]->delay -= 1;
         }
-        fprintf(stderr, "delay: %d\n", pushers[mac_address]->delay);
+
+        pushers[mac_address]->print();
       }
 
       if (working) {

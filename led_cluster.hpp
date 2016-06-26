@@ -18,6 +18,8 @@ public:
   void addStrip(std::string &mac, int strip, int strip_offset, int start, int end, int divisions);
   void addStrip(int start, int end, int divisions);
 
+  void setGamma(float g);
+
   Model balls;
   Model plane;
 
@@ -26,6 +28,8 @@ private:
 
   DiscoveryService ds;
 
+  float gamma;
+  unsigned char lut[256];
   class Strip {
   public:
     Strip();
@@ -34,6 +38,7 @@ private:
 
     int strip, strip_offset, offset;
     size_t size;
+
   };
 
   std::map<std::string, std::vector<Strip>> strip_mappings;
