@@ -107,8 +107,8 @@ void Scene::render() {
   GLfloat currentFrame = glfwGetTime();
   deltaTime = currentFrame - lastFrame;
   lastFrame = currentFrame;
-  screen->render(perspective);
   fb_render->render(perspective);
+  screen->render(perspective);
 }
 
 float Scene::getGamma()
