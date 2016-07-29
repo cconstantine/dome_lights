@@ -94,37 +94,41 @@ void PixelPusher::background_sender() {
     sender_condition.wait(sender_lock);
     //fprintf(stderr, "unlocked\n");
 
-    std::vector<uint8_t> packet;
-    asio::io_service io_service;
-    udp::socket sock(io_service, udp::endpoint(udp::v4(), 0));
 
-    udp::resolver resolver(io_service);
-    udp::endpoint endpoint = *resolver.resolve({udp::v4(),description.ip_address(), "9897"});
+    try {
+      std::vector<uint8_t> packet;
+      asio::io_service io_service;
+      udp::socket sock(io_service, udp::endpoint(udp::v4(), 0));
+
+      udp::resolver resolver(io_service);
+      udp::endpoint endpoint = *resolver.resolve({udp::v4(),description.ip_address(), "9897"});
 
 
-    for(unsigned int i = 0; i < description.packet.strips_attached;i+=description.packet.max_strips_per_packet) {
-      //dsfprintf(stderr, "i: %d\n", i);
-      packet.clear();
-      //fprintf(stderr, "packet_number: %d\n", packet_number);
-      packet.push_back((packet_number >>  0) & 0xFF);
-      packet.push_back((packet_number >>  8) & 0xFF);
-      packet.push_back((packet_number >> 16) & 0xFF);
-      packet.push_back((packet_number >> 24) & 0xFF);
-      packet_number++;
+      for(unsigned int i = 0; i < description.packet.strips_attached;i+=description.packet.max_strips_per_packet) {
+        //dsfprintf(stderr, "i: %d\n", i);
+        packet.clear();
+        //fprintf(stderr, "packet_number: %d\n", packet_number);
+        packet.push_back((packet_number >>  0) & 0xFF);
+        packet.push_back((packet_number >>  8) & 0xFF);
+        packet.push_back((packet_number >> 16) & 0xFF);
+        packet.push_back((packet_number >> 24) & 0xFF);
+        packet_number++;
 
-      for(unsigned int j = 0;j < description.packet.max_strips_per_packet;j++) {
-        unsigned int idx = i + j;
-        packet.push_back((uint8_t)(idx & 0xFF));
+        for(unsigned int j = 0;j < description.packet.max_strips_per_packet;j++) {
+          unsigned int idx = i + j;
+          packet.push_back((uint8_t)(idx & 0xFF));
 
-        std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
+          std::copy(pixels[idx].begin(), pixels[idx].end(), std::back_inserter(packet));
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+
+        sock.send_to(asio::buffer(&packet[0],packet.size()), endpoint);
       }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-      sock.send_to(asio::buffer(&packet[0],packet.size()), endpoint);
-
+    } catch (std::exception& e) {
+      fprintf(stderr, "Error sending: %s\n", e.what());
     }
   }
-
 }
 
 void PixelPusher::send(uint8_t r, uint8_t g, uint8_t b) {

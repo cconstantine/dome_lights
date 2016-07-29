@@ -15,37 +15,6 @@ LedCluster::LedCluster(const Texture& texture)
 
   model = importer.ReadFile("../models/dome.obj", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
-  std::string mac1("d8:80:39:65:f1:91");
-  addStrip(mac1, 0,  0,  17, 16, 84);
-  addStrip(mac1, 0, 84,  16, 10, 82);
-  addStrip(mac1, 1,  0,  17, 10, 84);
-  addStrip(mac1, 1, 84,  10,  0, 72);
-  addStrip(mac1, 2,  0,  17, 12, 84);
-  addStrip(mac1, 2, 84,  12, 10, 82);
-  addStrip(mac1, 3,  0,  17, 19, 84);
-  addStrip(mac1, 3, 84,  19, 12, 82);
-  addStrip(mac1, 4,  0,  17, 20, 84);
-  addStrip(mac1, 4, 84,  20, 19, 82);
-  addStrip(mac1, 5,  0,  17, 18, 84);
-  addStrip(mac1, 5, 84,  18, 20, 82);
-  addStrip(mac1, 6,  0,  20, 38, 84);
-  addStrip(mac1, 6, 84,  38, 19, 84);
-  
-  std::string mac2("d8:80:39:66:48:44");
-  addStrip(mac2, 0,  0,  23, 22, 84);
-  addStrip(mac2, 0, 84,  22, 16, 82);
-  addStrip(mac2, 1,  0,  23, 16, 84);
-  addStrip(mac2, 1, 84,  16,  0, 72);
-  addStrip(mac2, 2,  0,  23, 18, 84);
-  addStrip(mac2, 2, 84,  18, 16, 82);
-  addStrip(mac2, 3,  0,  23, 25, 84);
-  addStrip(mac2, 3, 84,  25, 18, 82);
-  addStrip(mac2, 4,  0,  23, 26, 84);
-  addStrip(mac2, 4, 84,  26, 25, 82);
-  addStrip(mac2, 5,  0,  23, 24, 84);
-  addStrip(mac2, 5, 84,  24, 26, 82);
-  addStrip(mac2, 6,  0,  26, 41, 84);
-  addStrip(mac2, 6, 84,  41, 25, 84);
 
   std::string mac3("d8:80:39:66:4b:de");
   addStrip(mac3, 0,  0,  28,  2, 84);
@@ -63,22 +32,38 @@ LedCluster::LedCluster(const Texture& texture)
   addStrip(mac3, 6,  0,  30, 44, 84);
   addStrip(mac3, 6, 84,  44, 29, 84);
 
-  std::string mac4("d8:80:39:66:29:c6");
-  addStrip(mac4, 0,  0,   3,  1, 84);
-  addStrip(mac4, 0, 84,   1,  2, 82);
-  addStrip(mac4, 1,  0,   3,  2, 84);
-  addStrip(mac4, 1, 84,   2,  0, 72);
-  addStrip(mac4, 2,  0,   3,  4, 84);
-  addStrip(mac4, 2, 84,   4,  2, 82);
-  addStrip(mac4, 3,  0,   3,  6, 84);
-  addStrip(mac4, 3, 84,   6,  4, 82);
-  addStrip(mac4, 4,  0,   3,  8, 84);
-  addStrip(mac4, 4, 84,   8,  6, 82);
-  addStrip(mac4, 5,  0,   3,  5, 84);
-  addStrip(mac4, 5, 84,   5,  8, 82);
-  addStrip(mac4, 6,  0,   8, 32, 84);
-  addStrip(mac4, 6, 84,  32,  6, 84);
+  std::string mac2("d8:80:39:66:48:44");
+  addStrip(mac2, 0,  0,  23, 22, 84);
+  addStrip(mac2, 0, 84,  22, 16, 82);
+  addStrip(mac2, 1,  0,  23, 16, 84);
+  addStrip(mac2, 1, 84,  16,  0, 72);
+  addStrip(mac2, 2,  0,  23, 18, 84);
+  addStrip(mac2, 2, 84,  18, 16, 82);
+  addStrip(mac2, 3,  0,  23, 25, 84);
+  addStrip(mac2, 3, 84,  25, 18, 82);
+  addStrip(mac2, 4,  0,  23, 26, 84);
+  addStrip(mac2, 4, 84,  26, 25, 82);
+  addStrip(mac2, 5,  0,  23, 24, 84);
+  addStrip(mac2, 5, 84,  24, 26, 82);
+  addStrip(mac2, 6,  0,  26, 41, 84);
+  addStrip(mac2, 6, 84,  41, 25, 84);
 
+  std::string mac1("d8:80:39:65:f1:91");
+  addStrip(mac1, 0,  0,  17, 16, 84);
+  addStrip(mac1, 0, 84,  16, 10, 82);
+  addStrip(mac1, 1,  0,  17, 10, 84);
+  addStrip(mac1, 1, 84,  10,  0, 72);
+  addStrip(mac1, 2,  0,  17, 12, 84);
+  addStrip(mac1, 2, 84,  12, 10, 82);
+  addStrip(mac1, 3,  0,  17, 19, 84);
+  addStrip(mac1, 3, 84,  19, 12, 82);
+  addStrip(mac1, 4,  0,  17, 20, 84);
+  addStrip(mac1, 4, 84,  20, 19, 82);
+  addStrip(mac1, 5,  0,  17, 18, 84);
+  addStrip(mac1, 5, 84,  18, 20, 82);
+  addStrip(mac1, 6,  0,  20, 38, 84);
+  addStrip(mac1, 6, 84,  38, 19, 84);
+  
   std::string mac5("d8:80:39:66:0d:7e");
   addStrip(mac5, 0,  0,  11, 10, 84);
   addStrip(mac5, 0, 84,  10,  1, 82);
@@ -95,7 +80,21 @@ LedCluster::LedCluster(const Texture& texture)
   addStrip(mac5, 6,  0,  14, 35, 84);
   addStrip(mac5, 6, 84,  35, 13, 84);
 
-
+  std::string mac4("d8:80:39:66:29:c6");
+  addStrip(mac4, 0,  0,   3,  1, 84);
+  addStrip(mac4, 0, 84,   1,  2, 82);
+  addStrip(mac4, 1,  0,   3,  2, 84);
+  addStrip(mac4, 1, 84,   2,  0, 72);
+  addStrip(mac4, 2,  0,   3,  4, 84);
+  addStrip(mac4, 2, 84,   4,  2, 82);
+  addStrip(mac4, 3,  0,   3,  6, 84);
+  addStrip(mac4, 3, 84,   6,  4, 82);
+  addStrip(mac4, 4,  0,   3,  8, 84);
+  addStrip(mac4, 4, 84,   8,  6, 82);
+  addStrip(mac4, 5,  0,   3,  5, 84);
+  addStrip(mac4, 5, 84,   5,  8, 82);
+  addStrip(mac4, 6,  0,   8, 32, 84);
+  addStrip(mac4, 6, 84,  32,  6, 84);
 }
 
 void LedCluster::setGamma(float g) {

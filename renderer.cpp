@@ -118,9 +118,9 @@ float Scene::getGamma()
 
 bool Scene::nextPattern() {
 
-  bool ret = keys[GLFW_KEY_N];
+  bool ret = keys[GLFW_KEY_ENTER];
   if(ret) {
-    keys[GLFW_KEY_N] = false;
+    keys[GLFW_KEY_ENTER] = false;
   }
 
   return ret;
